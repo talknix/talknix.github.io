@@ -3,89 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Talknix  - P2P Chat </title>
+    <title>P2P WebRTC Chat</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin: 20px;
+            background: #f4f4f4;
+            padding: 20px;
         }
-        #chat-box {
+        textarea, input {
             width: 90%;
-            max-width: 400px;
-            height: 300px;
-            border: 1px solid #ccc;
+            height: 100px;
+            margin: 10px 0;
+            padding: 5px;
+            font-size: 16px;
+        }
+        input {
+            height: 40px;
+        }
+        button {
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            width: 90%;
+            height: 200px;
             overflow-y: auto;
-            margin: 10px auto;
-            padding: 10px;
-            background: #f9f9f9;
+            background: white;
+            margin: auto;
         }
-        input, button {
-            margin-top: 10px;
-            padding: 10px;
-            width: 90%;
-            max-width: 400px;
+        .copy-btn {
+            background: #28a745;
+        }
+        .copy-btn:hover {
+            background: #1e7e34;
+        }
+        @media (max-width: 600px) {
+            textarea, input {
+                width: 95%;
+            }
+            button {
+                width: 95%;
+            }
         }
     </style>
 </head>
 <body>
-
     <h2>WebRTC P2P Chat</h2>
-    <textarea id="offer" placeholder="Paste connection offer here"></textarea><br>
+
     <button onclick="createOffer()">Create Offer</button>
+    <textarea id="offer" readonly></textarea>
+    <button class="copy-btn" onclick="copyText('offer')">Copy</button>
+
+    <br>
     <button onclick="acceptOffer()">Accept Offer</button>
-    
-    <div id="chat-box"></div>
-    
-    <input type="text" id="message" placeholder="Type a message">
+    <textarea id="answer" readonly></textarea>
+    <button class="copy-btn" onclick="copyText('answer')">Copy</button>
+
+    <br>
+    <textarea id="remoteAnswer" placeholder="Paste received answer here"></textarea>
+    <button onclick="connect()">Connect</button>
+
+    <h3>Chat</h3>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type message...">
     <button onclick="sendMessage()">Send</button>
 
     <script>
-        let peerConnection;
-        let dataChannel;
+        let peerConnection = new RTCPeerConnection();
+        let dataChannel = peerConnection.createDataChannel("chat");
+
+        dataChannel.onmessage = (event) => {
+            let chatBox = document.getElementById("messages");
+            chatBox.innerHTML += `<p><b>Friend:</b> ${event.data}</p>`;
+        };
 
         async function createOffer() {
-            peerConnection = new RTCPeerConnection();
-            dataChannel = peerConnection.createDataChannel("chat");
-
-            setupDataChannel();
-
-            const offer = await peerConnection.createOffer();
+            let offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
-            alert("Copy this offer and send it to your friend: " + JSON.stringify(offer));
+            document.getElementById("offer").value = JSON.stringify(offer);
         }
 
         async function acceptOffer() {
-            const offerText = document.getElementById("offer").value;
-            const offer = JSON.parse(offerText);
-
-            peerConnection = new RTCPeerConnection();
-            peerConnection.ondatachannel = (event) => {
-                dataChannel = event.channel;
-                setupDataChannel();
-            };
-
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnection.createAnswer();
+            let offer = JSON.parse(document.getElementById("offer").value);
+            await peerConnection.setRemoteDescription(offer);
+            let answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
-
-            alert("Copy this answer and send it back: " + JSON.stringify(answer));
+            document.getElementById("answer").value = JSON.stringify(answer);
         }
 
-        function setupDataChannel() {
-            dataChannel.onopen = () => console.log("Connected!");
-            dataChannel.onmessage = (event) => {
-                document.getElementById("chat-box").innerHTML += "<p>Friend: " + event.data + "</p>";
-            };
+        async function connect() {
+            let answer = JSON.parse(document.getElementById("remoteAnswer").value);
+            await peerConnection.setRemoteDescription(answer);
         }
 
         function sendMessage() {
-            const message = document.getElementById("message").value;
+            let messageInput = document.getElementById("messageInput");
+            let message = messageInput.value;
+            if (message.trim() === "") return;
             dataChannel.send(message);
-            document.getElementById("chat-box").innerHTML += "<p>You: " + message + "</p>";
-            document.getElementById("message").value = "";
+            document.getElementById("messages").innerHTML += `<p><b>You:</b> ${message}</p>`;
+            messageInput.value = "";
+        }
+
+        function copyText(id) {
+            let textArea = document.getElementById(id);
+            textArea.select();
+            textArea.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            alert("Copied!");
         }
     </script>
-
 </body>
 </html>
