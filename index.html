@@ -1,156 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P2P WebRTC Chat</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-        .container {
-            width: 90%;
-            max-width: 500px;
-            margin: 20px auto;
-            padding: 20px;
-            background: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-        }
-        h2 {
-            color: #007bff;
-        }
-        textarea, input {
-            width: 100%;
-            height: 80px;
-            margin: 10px 0;
-            padding: 10px;
-            font-size: 14px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            resize: none;
-        }
-        input {
-            height: 40px;
-        }
-        .btn {
-            padding: 10px;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 5px;
-            margin-top: 5px;
-        }
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #0056b3;
-        }
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-        .btn-success:hover {
-            background: #1e7e34;
-        }
-        #messages {
-            border: 1px solid #ddd;
-            padding: 10px;
-            height: 200px;
-            overflow-y: auto;
-            background: #fafafa;
-            border-radius: 5px;
-            text-align: left;
-        }
-        .message {
-            margin: 5px 0;
-        }
-        .you {
-            color: #007bff;
-        }
-        .friend {
-            color: #28a745;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .container { max-width: 500px; margin: auto; padding: 10px; }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+        button { width: 100%; padding: 10px; margin-bottom: 10px; }
+        .chat-box { border: 1px solid #ccc; height: 200px; overflow-y: auto; padding: 10px; }
     </style>
 </head>
 <body>
+    <h2>P2P WebRTC Chat</h2>
+    <div class="container">
+        <h3>Step 1: Create Offer (User 1)</h3>
+        <button onclick="createOffer()">Create Offer</button>
+        <textarea id="offer" readonly></textarea>
+        <button onclick="copyText('offer')">Copy</button>
 
-<div class="container">
-    <h2>WebRTC P2P Chat</h2>
+        <h3>Step 2: Accept Offer (User 2)</h3>
+        <textarea id="receivedOffer" placeholder="Paste offer here..."></textarea>
+        <button onclick="acceptOffer()">Accept Offer</button>
+        <textarea id="answer" readonly></textarea>
+        <button onclick="copyText('answer')">Copy</button>
 
-    <button class="btn btn-primary" onclick="createOffer()">Create Offer</button>
-    <textarea id="offer" readonly placeholder="Offer will appear here"></textarea>
-    <button class="btn btn-success" onclick="copyText('offer')">Copy Offer</button>
-
-    <button class="btn btn-primary" onclick="acceptOffer()">Accept Offer</button>
-    <textarea id="answer" readonly placeholder="Answer will appear here"></textarea>
-    <button class="btn btn-success" onclick="copyText('answer')">Copy Answer</button>
-
-    <textarea id="remoteAnswer" placeholder="Paste received answer here"></textarea>
-    <button class="btn btn-primary" onclick="connect()">Connect</button>
+        <h3>Step 3: Finalize Connection (User 1)</h3>
+        <textarea id="receivedAnswer" placeholder="Paste answer here..."></textarea>
+        <button onclick="finalizeConnection()">Connect</button>
+    </div>
 
     <h3>Chat</h3>
-    <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="Type message...">
-    <button class="btn btn-primary" onclick="sendMessage()">Send</button>
-</div>
+    <div class="container">
+        <div class="chat-box" id="chat"></div>
+        <input type="text" id="message" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
 
-<script>
-    let peerConnection = new RTCPeerConnection();
-    let dataChannel = peerConnection.createDataChannel("chat");
+    <script>
+        let peerConnection = new RTCPeerConnection();
+        let dataChannel;
 
-    dataChannel.onmessage = (event) => {
-        let chatBox = document.getElementById("messages");
-        chatBox.innerHTML += `<p class="message friend"><b>Friend:</b> ${event.data}</p>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-    };
+        function createOffer() {
+            dataChannel = peerConnection.createDataChannel("chat");
+            peerConnection.createOffer().then(offer => {
+                peerConnection.setLocalDescription(offer);
+                document.getElementById("offer").value = JSON.stringify(offer);
+            });
+        }
 
-    async function createOffer() {
-        let offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        document.getElementById("offer").value = JSON.stringify(offer);
-    }
+        function acceptOffer() {
+            let offer = JSON.parse(document.getElementById("receivedOffer").value);
+            peerConnection.ondatachannel = event => {
+                dataChannel = event.channel;
+                dataChannel.onmessage = event => addMessage("Peer: " + event.data);
+            };
+            peerConnection.setRemoteDescription(offer);
+            peerConnection.createAnswer().then(answer => {
+                peerConnection.setLocalDescription(answer);
+                document.getElementById("answer").value = JSON.stringify(answer);
+            });
+        }
 
-    async function acceptOffer() {
-        let offer = JSON.parse(document.getElementById("offer").value);
-        await peerConnection.setRemoteDescription(offer);
-        let answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        document.getElementById("answer").value = JSON.stringify(answer);
-    }
+        function finalizeConnection() {
+            let answer = JSON.parse(document.getElementById("receivedAnswer").value);
+            peerConnection.setRemoteDescription(answer);
+        }
 
-    async function connect() {
-        let answer = JSON.parse(document.getElementById("remoteAnswer").value);
-        await peerConnection.setRemoteDescription(answer);
-    }
+        function sendMessage() {
+            let message = document.getElementById("message").value;
+            dataChannel.send(message);
+            addMessage("You: " + message);
+            document.getElementById("message").value = "";
+        }
 
-    function sendMessage() {
-        let messageInput = document.getElementById("messageInput");
-        let message = messageInput.value;
-        if (message.trim() === "") return;
-        dataChannel.send(message);
-        document.getElementById("messages").innerHTML += `<p class="message you"><b>You:</b> ${message}</p>`;
-        messageInput.value = "";
-    }
+        function addMessage(msg) {
+            let chatBox = document.getElementById("chat");
+            chatBox.innerHTML += <p>${msg}</p>;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
-    function copyText(id) {
-        let textArea = document.getElementById(id);
-        textArea.select();
-        textArea.setSelectionRange(0, 99999);
-        document.execCommand("copy");
-        alert("Copied!");
-    }
-</script>
-
+        function copyText(id) {
+            let textArea = document.getElementById(id);
+            textArea.select();
+            document.execCommand("copy");
+        }
+    </script>
 </body>
 </html>
