@@ -1,53 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>P2P Chat using WebRTC</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Chat</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        textarea { width: 90%; height: 50px; margin: 10px 0; display: block; }
-        button { width: 92%; padding: 10px; margin: 5px 0; font-size: 16px; cursor: pointer; }
-        .blue-btn { background-color: #007bff; color: white; border: none; }
-        .green-btn { background-color: #28a745; color: white; border: none; }
-        .info { font-size: 14px; color: gray; }
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 90%; max-width: 600px; }
+        .section { border: 2px solid #000; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .btn { width: 100%; padding: 10px; margin: 5px 0; cursor: pointer; }
+        .blue { background: #007BFF; color: white; }
+        .green { background: #28A745; color: white; }
+        textarea { width: 100%; height: 50px; margin: 5px 0; }
     </style>
 </head>
 <body>
-    <h2>P2P Chat Connection</h2>
-    
-    <button class="blue-btn" onclick="createOffer()">Create Offer</button>
-    <textarea id="offerBox" placeholder="Offer will appear here" readonly></textarea>
-    <button class="green-btn" onclick="copyOffer()">Copy Offer</button>
-    <p class="info">User 1: Copy this offer and send it to User 2</p>
-    
-    <textarea id="pasteOffer" placeholder="Paste received offer here"></textarea>
-    <button class="blue-btn" onclick="acceptOffer()">Accept Offer</button>
-    <textarea id="answerBox" placeholder="Answer will appear here" readonly></textarea>
-    <button class="green-btn" onclick="copyAnswer()">Copy Answer</button>
-    <p class="info">User 2: Copy this answer and send it back to User 1</p>
-    
-    <textarea id="pasteAnswer" placeholder="Paste received answer here"></textarea>
-    <button class="blue-btn" onclick="connect()">Connect</button>
-    <p class="info">User 1: Paste received answer and click Connect</p>
-    
-    <h3>Chat</h3>
-    <textarea id="chatBox" placeholder="Chat messages will appear here" readonly></textarea>
-    
-    <script>
-        function createOffer() {
-            document.getElementById("offerBox").value = "Generated WebRTC Offer";
-        }
-        function copyOffer() {
-            navigator.clipboard.writeText(document.getElementById("offerBox").value);
-        }
-        function acceptOffer() {
-            document.getElementById("answerBox").value = "Generated WebRTC Answer";
-        }
-        function copyAnswer() {
-            navigator.clipboard.writeText(document.getElementById("answerBox").value);
-        }
-        function connect() {
-            alert("P2P Connection Established!");
-        }
-    </script>
+    <div class="container">
+        <h2>P2P Chat Connection</h2>
+        
+        <!-- Connection Section -->
+        <div class="section">
+            <h3>Connection Setup</h3>
+            
+            <!-- Create Connection (User 1) -->
+            <div>
+                <button class="btn blue">Create Offer</button>
+                <textarea placeholder="Generated Offer"></textarea>
+                <button class="btn green">Copy Offer</button>
+            </div>
+            
+            <!-- Accept Connection (User 2) -->
+            <div>
+                <button class="btn blue">Accept Offer</button>
+                <textarea placeholder="Generated Answer"></textarea>
+                <button class="btn green">Copy Answer</button>
+            </div>
+            
+            <!-- Final Connection Step -->
+            <textarea placeholder="Paste received answer here"></textarea>
+            <button class="btn blue">Connect</button>
+        </div>
+        
+        <!-- Chat Section -->
+        <div class="section">
+            <h3>Chat</h3>
+            <textarea placeholder="Type a message..."></textarea>
+            <button class="btn blue">Send</button>
+            <div id="chatBox" style="border: 1px solid #000; height: 150px; overflow-y: scroll; padding: 5px;"></div>
+        </div>
+    </div>
 </body>
 </html>
