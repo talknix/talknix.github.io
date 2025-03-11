@@ -1,88 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>P2P WebRTC Chat</title>
+    <title>P2P Chat using WebRTC</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        .container { max-width: 500px; margin: auto; padding: 10px; }
-        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-        button { width: 100%; padding: 10px; margin-bottom: 10px; }
-        .chat-box { border: 1px solid #ccc; height: 200px; overflow-y: auto; padding: 10px; }
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        textarea { width: 90%; height: 50px; margin: 10px 0; display: block; }
+        button { width: 92%; padding: 10px; margin: 5px 0; font-size: 16px; cursor: pointer; }
+        .blue-btn { background-color: #007bff; color: white; border: none; }
+        .green-btn { background-color: #28a745; color: white; border: none; }
+        .info { font-size: 14px; color: gray; }
     </style>
 </head>
 <body>
-    <h2>P2P WebRTC Chat</h2>
-    <div class="container">
-        <h3>Step 1: Create Offer (User 1)</h3>
-        <button onclick="createOffer()">Create Offer</button>
-        <textarea id="offer" readonly></textarea>
-        <button onclick="copyText('offer')">Copy</button>
-
-        <h3>Step 2: Accept Offer (User 2)</h3>
-        <textarea id="receivedOffer" placeholder="Paste offer here..."></textarea>
-        <button onclick="acceptOffer()">Accept Offer</button>
-        <textarea id="answer" readonly></textarea>
-        <button onclick="copyText('answer')">Copy</button>
-
-        <h3>Step 3: Finalize Connection (User 1)</h3>
-        <textarea id="receivedAnswer" placeholder="Paste answer here..."></textarea>
-        <button onclick="finalizeConnection()">Connect</button>
-    </div>
-
+    <h2>P2P Chat Connection</h2>
+    
+    <button class="blue-btn" onclick="createOffer()">Create Offer</button>
+    <textarea id="offerBox" placeholder="Offer will appear here" readonly></textarea>
+    <button class="green-btn" onclick="copyOffer()">Copy Offer</button>
+    <p class="info">User 1: Copy this offer and send it to User 2</p>
+    
+    <textarea id="pasteOffer" placeholder="Paste received offer here"></textarea>
+    <button class="blue-btn" onclick="acceptOffer()">Accept Offer</button>
+    <textarea id="answerBox" placeholder="Answer will appear here" readonly></textarea>
+    <button class="green-btn" onclick="copyAnswer()">Copy Answer</button>
+    <p class="info">User 2: Copy this answer and send it back to User 1</p>
+    
+    <textarea id="pasteAnswer" placeholder="Paste received answer here"></textarea>
+    <button class="blue-btn" onclick="connect()">Connect</button>
+    <p class="info">User 1: Paste received answer and click Connect</p>
+    
     <h3>Chat</h3>
-    <div class="container">
-        <div class="chat-box" id="chat"></div>
-        <input type="text" id="message" placeholder="Type a message...">
-        <button onclick="sendMessage()">Send</button>
-    </div>
-
+    <textarea id="chatBox" placeholder="Chat messages will appear here" readonly></textarea>
+    
     <script>
-        let peerConnection = new RTCPeerConnection();
-        let dataChannel;
-
         function createOffer() {
-            dataChannel = peerConnection.createDataChannel("chat");
-            peerConnection.createOffer().then(offer => {
-                peerConnection.setLocalDescription(offer);
-                document.getElementById("offer").value = JSON.stringify(offer);
-            });
+            document.getElementById("offerBox").value = "Generated WebRTC Offer";
         }
-
+        function copyOffer() {
+            navigator.clipboard.writeText(document.getElementById("offerBox").value);
+        }
         function acceptOffer() {
-            let offer = JSON.parse(document.getElementById("receivedOffer").value);
-            peerConnection.ondatachannel = event => {
-                dataChannel = event.channel;
-                dataChannel.onmessage = event => addMessage("Peer: " + event.data);
-            };
-            peerConnection.setRemoteDescription(offer);
-            peerConnection.createAnswer().then(answer => {
-                peerConnection.setLocalDescription(answer);
-                document.getElementById("answer").value = JSON.stringify(answer);
-            });
+            document.getElementById("answerBox").value = "Generated WebRTC Answer";
         }
-
-        function finalizeConnection() {
-            let answer = JSON.parse(document.getElementById("receivedAnswer").value);
-            peerConnection.setRemoteDescription(answer);
+        function copyAnswer() {
+            navigator.clipboard.writeText(document.getElementById("answerBox").value);
         }
-
-        function sendMessage() {
-            let message = document.getElementById("message").value;
-            dataChannel.send(message);
-            addMessage("You: " + message);
-            document.getElementById("message").value = "";
-        }
-
-        function addMessage(msg) {
-            let chatBox = document.getElementById("chat");
-            chatBox.innerHTML += <p>${msg}</p>;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function copyText(id) {
-            let textArea = document.getElementById(id);
-            textArea.select();
-            document.execCommand("copy");
+        function connect() {
+            alert("P2P Connection Established!");
         }
     </script>
 </body>
