@@ -3,56 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P WebRTC Chat</title>
+    <title>P2P Chat - WebRTC</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        video { width: 45%; border: 2px solid black; }
-        #chat { width: 100%; height: 200px; overflow-y: auto; border: 1px solid #ccc; }
-        input { width: 80%; padding: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #chat-box {
+            width: 90%;
+            max-width: 400px;
+            height: 300px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            margin: 10px auto;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        input, button {
+            margin-top: 10px;
+            padding: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
     </style>
 </head>
 <body>
+
     <h2>WebRTC P2P Chat</h2>
-    <video id="localVideo" autoplay playsinline></video>
-    <video id="remoteVideo" autoplay playsinline></video>
-    <br><br>
-    <div id="chat"></div>
+    <textarea id="offer" placeholder="Paste connection offer here"></textarea><br>
+    <button onclick="createOffer()">Create Offer</button>
+    <button onclick="acceptOffer()">Accept Offer</button>
+    
+    <div id="chat-box"></div>
+    
     <input type="text" id="message" placeholder="Type a message">
     <button onclick="sendMessage()">Send</button>
-    <br><br>
-    <button id="startCall">Start Call</button>
-    
+
     <script>
-        let localStream, remoteStream, peerConnection;
-        const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+        let peerConnection;
+        let dataChannel;
 
-        async function startCall() {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            document.getElementById("localVideo").srcObject = localStream;
-            peerConnection = new RTCPeerConnection(servers);
-            remoteStream = new MediaStream();
-            document.getElementById("remoteVideo").srcObject = remoteStream;
+        async function createOffer() {
+            peerConnection = new RTCPeerConnection();
+            dataChannel = peerConnection.createDataChannel("chat");
 
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            peerConnection.ontrack = event => event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+            setupDataChannel();
 
-            peerConnection.onicecandidate = event => {
-                if (event.candidate) {
-                    console.log("New ICE candidate:", event.candidate);
-                }
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            alert("Copy this offer and send it to your friend: " + JSON.stringify(offer));
+        }
+
+        async function acceptOffer() {
+            const offerText = document.getElementById("offer").value;
+            const offer = JSON.parse(offerText);
+
+            peerConnection = new RTCPeerConnection();
+            peerConnection.ondatachannel = (event) => {
+                dataChannel = event.channel;
+                setupDataChannel();
             };
 
-            let offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            console.log("Offer Created:", offer);
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+
+            alert("Copy this answer and send it back: " + JSON.stringify(answer));
         }
 
-        document.getElementById("startCall").addEventListener("click", startCall);
+        function setupDataChannel() {
+            dataChannel.onopen = () => console.log("Connected!");
+            dataChannel.onmessage = (event) => {
+                document.getElementById("chat-box").innerHTML += "<p>Friend: " + event.data + "</p>";
+            };
+        }
 
         function sendMessage() {
-            let msg = document.getElementById("message").value;
-            document.getElementById("chat").innerHTML += `<p><b>You:</b> ${msg}</p>`;
+            const message = document.getElementById("message").value;
+            dataChannel.send(message);
+            document.getElementById("chat-box").innerHTML += "<p>You: " + message + "</p>";
+            document.getElementById("message").value = "";
         }
     </script>
+
 </body>
 </html>
