@@ -1,22 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>TalkNix WebRTC Signaling</title>
-    <meta name="google-site-verification" content="KIaKv1q0VsEDbSK6SxF9_s00vPhySNIod2Tg9AEp5zI" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P WebRTC Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        video { width: 45%; border: 2px solid black; }
+        #chat { width: 100%; height: 200px; overflow-y: auto; border: 1px solid #ccc; }
+        input { width: 80%; padding: 10px; }
+    </style>
 </head>
 <body>
-    <h2>TalkNix P2P Signaling</h2>
-    <button onclick="startSignaling()">Connect</button>
+    <h2>WebRTC P2P Chat</h2>
+    <video id="localVideo" autoplay playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+    <br><br>
+    <div id="chat"></div>
+    <input type="text" id="message" placeholder="Type a message">
+    <button onclick="sendMessage()">Send</button>
+    <br><br>
+    <button id="startCall">Start Call</button>
+    
     <script>
-        let socket = new WebSocket("wss://signaling.simplewebrtc.com");
+        let localStream, remoteStream, peerConnection;
+        const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
-        function startSignaling() {
-            socket.send(JSON.stringify({ type: "offer", data: "Request to connect" }));
+        async function startCall() {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById("localVideo").srcObject = localStream;
+            peerConnection = new RTCPeerConnection(servers);
+            remoteStream = new MediaStream();
+            document.getElementById("remoteVideo").srcObject = remoteStream;
+
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            peerConnection.ontrack = event => event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    console.log("New ICE candidate:", event.candidate);
+                }
+            };
+
+            let offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            console.log("Offer Created:", offer);
         }
 
-        socket.onmessage = (event) => {
-            console.log("Message from peer:", event.data);
-        };
+        document.getElementById("startCall").addEventListener("click", startCall);
+
+        function sendMessage() {
+            let msg = document.getElementById("message").value;
+            document.getElementById("chat").innerHTML += `<p><b>You:</b> ${msg}</p>`;
+        }
     </script>
 </body>
 </html>
