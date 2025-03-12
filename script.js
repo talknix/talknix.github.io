@@ -1,130 +1,171 @@
-// Wait until DOM is fully loaded before adding event listeners
-document.addEventListener("DOMContentLoaded", function() {
-    document.getElementById("generateBtn").addEventListener("click", generateCode);
-    document.getElementById("joinBtn").addEventListener("click", joinChat);
-    document.getElementById("sendBtn").addEventListener("click", sendMessage);
-});
-
-// Firebase configuration
+// Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
     authDomain: "talknix-p2p.firebaseapp.com",
     databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "talknix-p2p",
     storageBucket: "talknix-p2p.firebasestorage.app",
-    messagingSenderId: "1091516076156",
+    messagingSenderId: "1091516076156"
 };
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const db = firebase.database();
 
-let localConnection, remoteConnection;
-let dataChannel;
+// Global variables
+let pc; // RTCPeerConnection
+let dataChannel; // RTCDataChannel
+const IPINFO_TOKEN = "dc56d91e24459d"; // Your ipinfo.io token
 
-// Function to generate a unique 7-digit code only once per session
-function generateCode() {
-    let existingCode = localStorage.getItem("chatCode");
-    if (!existingCode) {
-        let code = Math.floor(1000000 + Math.random() * 9000000); // Generate a 7-digit code
-        localStorage.setItem("chatCode", code); // Store in localStorage
-        document.getElementById("codeInput").value = code; // Display the code
-    } else {
-        document.getElementById("codeInput").value = existingCode; // Reuse existing code
+// DOM Elements
+const chatCodeInput = document.getElementById("chat-code");
+const generateCodeBtn = document.getElementById("generate-code");
+const joinChatBtn = document.getElementById("join-chat");
+const messageInput = document.getElementById("message-input");
+const sendMessageBtn = document.getElementById("send-message");
+const messagesDiv = document.getElementById("messages");
+
+// Generate 7-digit unique code
+async function generateCode() {
+    try {
+        const response = await fetch(`https://ipinfo.io/json?token=${IPINFO_TOKEN}`);
+        if (!response.ok) throw new Error("Failed to fetch IP info");
+        const ipInfo = await response.json();
+        
+        const country = ipInfo.country || "XX";
+        const region = ipInfo.region || "Unknown";
+        const isp = ipInfo.org || "UnknownISP";
+        const timestamp = Date.now().toString();
+        
+        const strToHash = country + region + isp + timestamp;
+        const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(strToHash));
+        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+        const hashBigInt = BigInt("0x" + hashHex);
+        
+        const code = ((hashBigInt % 9000000n) + 1000000n).toString();
+        return code;
+    } catch (error) {
+        console.error("Error generating code:", error);
+        alert("Failed to generate code. Check console for details.");
+        return null;
     }
 }
 
+// Display messages in chat window
+function displayMessage(message) {
+    const messageElement = document.createElement("div");
+    messageElement.textContent = message;
+    messagesDiv.appendChild(messageElement);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to bottom
+}
 
-// Function to join chat (setup WebRTC)
-async function joinChat() {
-    let code = document.getElementById("codeInput").value;
-    if (code.length !== 7) {
-        alert("Please enter a valid 7-digit code!");
-        return;
-    }
-
-    localConnection = new RTCPeerConnection();
-    dataChannel = localConnection.createDataChannel("chat");
-
-    dataChannel.onmessage = (event) => displayMessage("Peer", event.data);
+// Create a new chat (Offerer)
+async function createNewChat(code) {
+    pc = new RTCPeerConnection();
+    
+    // Create data channel for messaging
+    dataChannel = pc.createDataChannel("chat");
     dataChannel.onopen = () => console.log("Data channel opened");
-    dataChannel.onclose = () => console.log("Data channel closed");
-
-    localConnection.onicecandidate = (event) => {
+    dataChannel.onmessage = (event) => displayMessage(`Peer: ${event.data}`);
+    
+    // Generate and store SDP offer
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await db.ref(`chats/${code}/offer`).set(JSON.stringify(offer));
+    
+    // Handle ICE candidates
+    pc.onicecandidate = (event) => {
         if (event.candidate) {
-            database.ref("chats/" + code + "/ice").push(event.candidate);
+            db.ref(`chats/${code}/ice`).push().set(JSON.stringify(event.candidate));
         }
     };
-
-    let offer = await localConnection.createOffer();
-    await localConnection.setLocalDescription(offer);
-
-    database.ref("chats/" + code).set({ offer });
-
-    database.ref("chats/" + code + "/answer").on("value", async (snapshot) => {
-        if (snapshot.exists()) {
-            let answer = snapshot.val();
-            await localConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    
+    // Listen for answer from joiner
+    db.ref(`chats/${code}/answer`).on("value", async (snapshot) => {
+        if (snapshot.exists() && pc.signalingState !== "stable") {
+            const answer = JSON.parse(snapshot.val());
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
         }
     });
-
-    database.ref("chats/" + code + "/ice").on("child_added", async (snapshot) => {
-        let candidate = snapshot.val();
-        await localConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    
+    // Listen for ICE candidates from joiner
+    db.ref(`chats/${code}/ice`).on("child_added", async (snapshot) => {
+        const candidate = JSON.parse(snapshot.val());
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
     });
-
-    alert("Waiting for peer to join...");
 }
 
-// Function to accept connection
-async function acceptChat() {
-    let code = document.getElementById("codeInput").value;
-    if (code.length !== 7) {
-        alert("Please enter a valid 7-digit code!");
+// Join an existing chat (Answerer)
+async function joinExistingChat(code) {
+    pc = new RTCPeerConnection();
+    
+    // Fetch and set remote offer
+    const offerSnapshot = await db.ref(`chats/${code}/offer`).once("value");
+    if (!offerSnapshot.exists()) {
+        alert("No chat found with this code");
         return;
     }
-
-    remoteConnection = new RTCPeerConnection();
-    remoteConnection.ondatachannel = (event) => {
+    
+    const offer = JSON.parse(offerSnapshot.val());
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    
+    // Create and store answer
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await db.ref(`chats/${code}/answer`).set(JSON.stringify(answer));
+    
+    // Handle data channel from offerer
+    pc.ondatachannel = (event) => {
         dataChannel = event.channel;
-        dataChannel.onmessage = (e) => displayMessage("Peer", e.data);
+        dataChannel.onmessage = (event) => displayMessage(`Peer: ${event.data}`);
     };
-
-    remoteConnection.onicecandidate = (event) => {
+    
+    // Handle ICE candidates
+    pc.onicecandidate = (event) => {
         if (event.candidate) {
-            database.ref("chats/" + code + "/ice").push(event.candidate);
+            db.ref(`chats/${code}/ice`).push().set(JSON.stringify(event.candidate));
         }
     };
+    
+    // Listen for ICE candidates from offerer
+    db.ref(`chats/${code}/ice`).on("child_added", async (snapshot) => {
+        const candidate = JSON.parse(snapshot.val());
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+    });
+}
 
-    let snapshot = await database.ref("chats/" + code + "/offer").once("value");
-    if (!snapshot.exists()) {
-        alert("No active chat found for this code!");
+// Send message via data channel
+function sendMessage() {
+    const message = messageInput.value.trim();
+    if (message && dataChannel && dataChannel.readyState === "open") {
+        dataChannel.send(message);
+        displayMessage(`You: ${message}`);
+        messageInput.value = "";
+    } else if (!dataChannel || dataChannel.readyState !== "open") {
+        alert("Chat connection not established yet");
+    }
+}
+
+// Event Listeners
+generateCodeBtn.addEventListener("click", async () => {
+    const code = await generateCode();
+    if (code) {
+        chatCodeInput.value = code;
+        await createNewChat(code);
+        alert(`Chat created! Share this code: ${code}`);
+    }
+});
+
+joinChatBtn.addEventListener("click", async () => {
+    const code = chatCodeInput.value.trim();
+    if (!/^\d{7}$/.test(code)) {
+        alert("Please enter a valid 7-digit code");
         return;
     }
+    await joinExistingChat(code);
+});
 
-    let offer = snapshot.val();
-    await remoteConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-    let answer = await remoteConnection.createAnswer();
-    await remoteConnection.setLocalDescription(answer);
-
-    database.ref("chats/" + code + "/answer").set(answer);
-}
-
-// Function to send messages
-function sendMessage() {
-    let message = document.getElementById("messageInput").value;
-    if (message.trim() !== "" && dataChannel.readyState === "open") {
-        dataChannel.send(message);
-        displayMessage("You", message);
-        document.getElementById("messageInput").value = ""; // Clear input
-    }
-}
-
-// Function to display messages in chat
-function displayMessage(sender, message) {
-    let messageBox = document.getElementById("messages");
-    let newMessage = document.createElement("div");
-    newMessage.textContent = sender + ": " + message;
-    messageBox.appendChild(newMessage);
-}
+sendMessageBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendMessage();
+});
