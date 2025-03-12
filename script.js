@@ -16,6 +16,7 @@ const db = firebase.database();
 // Global variables
 let pc; // RTCPeerConnection
 let dataChannel; // RTCDataChannel
+let currentCode = null; // Track the current chat code
 const IPINFO_TOKEN = "dc56d91e24459d"; // Your ipinfo.io token
 
 // DOM Elements
@@ -24,7 +25,9 @@ const generateCodeBtn = document.getElementById("generate-code");
 const joinChatBtn = document.getElementById("join-chat");
 const messageInput = document.getElementById("message-input");
 const sendMessageBtn = document.getElementById("send-message");
+const clearChatBtn = document.getElementById("clear-chat");
 const messagesDiv = document.getElementById("messages");
+const statusDiv = document.getElementById("status");
 
 // Generate 7-digit unique code
 async function generateCode() {
@@ -52,7 +55,13 @@ async function generateCode() {
         return code;
     } catch (error) {
         console.error("Error generating code:", error);
-        alert("Failed to generate code. Check console for details.");
+        let errorMessage = "Failed to generate code. ";
+        if (error.message.includes("Failed to fetch")) {
+            errorMessage += "Unable to fetch IP info. Check your network or API token.";
+        } else {
+            errorMessage += "Check console for details.";
+        }
+        alert(errorMessage);
         return null;
     }
 }
@@ -67,16 +76,22 @@ function displayMessage(message) {
 
 // Create a new chat (Offerer)
 async function createNewChat(code) {
+    if (pc) pc.close(); // Close any existing connection
     pc = new RTCPeerConnection({
         iceServers: [
-            { urls: "stun:stun.l.google.com:19302" } // Add STUN server for better connectivity
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" } // Additional STUN server
         ]
     });
     
     // Create data channel for messaging
     dataChannel = pc.createDataChannel("chat");
-    dataChannel.onopen = () => console.log("Data channel opened");
+    dataChannel.onopen = () => {
+        console.log("Data channel opened");
+        statusDiv.textContent = "Status: Connected";
+    };
     dataChannel.onmessage = (event) => displayMessage(`Peer: ${event.data}`);
+    dataChannel.onerror = (error) => console.error("Data channel error:", error);
     
     // Generate and store SDP offer
     const offer = await pc.createOffer();
@@ -101,15 +116,17 @@ async function createNewChat(code) {
     // Listen for ICE candidates from joiner
     db.ref(`chats/${code}/ice`).on("child_added", async (snapshot) => {
         const candidate = JSON.parse(snapshot.val());
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => console.error("ICE candidate error:", err));
     });
 }
 
 // Join an existing chat (Answerer)
 async function joinExistingChat(code) {
+    if (pc) pc.close(); // Close any existing connection
     pc = new RTCPeerConnection({
         iceServers: [
-            { urls: "stun:stun.l.google.com:19302" } // Add STUN server for better connectivity
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" } // Additional STUN server
         ]
     });
     
@@ -131,7 +148,12 @@ async function joinExistingChat(code) {
     // Handle data channel from offerer
     pc.ondatachannel = (event) => {
         dataChannel = event.channel;
+        dataChannel.onopen = () => {
+            console.log("Data channel opened");
+            statusDiv.textContent = "Status: Connected";
+        };
         dataChannel.onmessage = (event) => displayMessage(`Peer: ${event.data}`);
+        dataChannel.onerror = (error) => console.error("Data channel error:", error);
     };
     
     // Handle ICE candidates
@@ -144,7 +166,7 @@ async function joinExistingChat(code) {
     // Listen for ICE candidates from offerer
     db.ref(`chats/${code}/ice`).on("child_added", async (snapshot) => {
         const candidate = JSON.parse(snapshot.val());
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => console.error("ICE candidate error:", err));
     });
 }
 
@@ -155,19 +177,42 @@ function sendMessage() {
         dataChannel.send(message);
         displayMessage(`You: ${message}`);
         messageInput.value = "";
-    } else if (!dataChannel || dataChannel.readyState !== "open") {
-        alert("Chat connection not established yet");
+    } else {
+        alert("Chat connection not established yet. Please wait for the connection to stabilize.");
+        console.log("Data channel state:", dataChannel ? dataChannel.readyState : "Not initialized");
+    }
+}
+
+// Clear chat messages
+function clearChat() {
+    messagesDiv.innerHTML = "";
+    statusDiv.textContent = "Status: Not Connected";
+    if (pc) {
+        pc.close();
+        pc = null;
+        dataChannel = null;
+        currentCode = null;
+        generateCodeBtn.disabled = false;
     }
 }
 
 // Event Listeners
 generateCodeBtn.addEventListener("click", async () => {
+    if (currentCode) {
+        alert("A chat is already active. Please clear the chat or use a new session.");
+        return;
+    }
+    generateCodeBtn.disabled = true;
+    generateCodeBtn.classList.add("loading");
     const code = await generateCode();
     if (code) {
+        currentCode = code;
         chatCodeInput.value = code;
         await createNewChat(code);
         alert(`Chat created! Share this code: ${code}`);
     }
+    generateCodeBtn.disabled = false;
+    generateCodeBtn.classList.remove("loading");
 });
 
 joinChatBtn.addEventListener("click", async () => {
@@ -176,6 +221,11 @@ joinChatBtn.addEventListener("click", async () => {
         alert("Please enter a valid 7-digit code");
         return;
     }
+    if (currentCode) {
+        alert("A chat is already active. Please clear the chat first.");
+        return;
+    }
+    currentCode = code;
     await joinExistingChat(code);
 });
 
@@ -183,3 +233,5 @@ sendMessageBtn.addEventListener("click", sendMessage);
 messageInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") sendMessage();
 });
+
+clearChatBtn.addEventListener("click", clearChat);
