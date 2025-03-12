@@ -3,26 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Talknix P2P - Private WebRTC Chat</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Talknix P2P WebRTC Chat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        #code-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        #code-section label {
+            font-weight: bold;
+            color: #555;
+        }
+        #chat-code {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex: 1;
+            min-width: 150px;
+            font-size: 14px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #chat-window {
+            background: #fafafa;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        #messages {
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: #fff;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+        #messages div {
+            padding: 5px 0;
+            word-wrap: break-word;
+        }
+        #input-area {
+            display: flex;
+            gap: 10px;
+        }
+        #message-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        #message-input:focus, #chat-code:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+        }
+        @media (max-width: 480px) {
+            #code-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h2>🔵 Talknix P2P - Private WebRTC Chat</h2>
-
-        <div class="connection-box">
-            <input type="text" id="codeInput" placeholder="Enter or Generate 7-digit code">
-            <button id="generateBtn">Generate Code</button>
-            <button id="joinBtn">Join Chat</button>
+        <h1>Talknix P2P WebRTC Chat</h1>
+        
+        <div id="code-section">
+            <label for="chat-code">Chat Code:</label>
+            <input type="text" id="chat-code" placeholder="Enter or generate chat code">
+            <button id="generate-code">Generate Code</button>
+            <button id="join-chat">Join Chat</button>
         </div>
 
-        <div class="chat-box">
+        <div id="chat-window">
             <div id="messages"></div>
-            <input type="text" id="messageInput" placeholder="Type a message...">
-            <button id="sendBtn">Send</button>
+            <div id="input-area">
+                <input type="text" id="message-input" placeholder="Type your message">
+                <button id="send-message">Send</button>
+            </div>
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    
+    <!-- Local Script -->
     <script src="script.js"></script>
 </body>
 </html>
