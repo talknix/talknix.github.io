@@ -14,8 +14,8 @@ console.log("Firebase initialized successfully");
 const db = firebase.database();
 
 // Global variables
-let pc; // RTCPeerConnection
-let dataChannel; // RTCDataChannel
+let pc = null; // RTCPeerConnection
+let dataChannel = null; // RTCDataChannel
 let currentCode = null; // Track the current chat code
 const IPINFO_TOKEN = "dc56d91e24459d"; // Your ipinfo.io token
 
@@ -80,7 +80,9 @@ async function createNewChat(code) {
     pc = new RTCPeerConnection({
         iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" } // Additional STUN server
+            { urls: "stun:stun1.l.google.com:19302" },
+            // Add a TURN server if needed (requires setup)
+            // { urls: "turn:your.turn.server:3478", username: "user", credential: "password" }
         ]
     });
     
@@ -94,13 +96,16 @@ async function createNewChat(code) {
     dataChannel.onerror = (error) => console.error("Data channel error:", error);
     
     // Generate and store SDP offer
+    console.log("Creating offer...");
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
+    console.log("Offer created, setting in Firebase...");
     await db.ref(`chats/${code}/offer`).set(JSON.stringify(offer));
     
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
         if (event.candidate) {
+            console.log("Sending ICE candidate...");
             db.ref(`chats/${code}/ice`).push().set(JSON.stringify(event.candidate));
         }
     };
@@ -108,6 +113,7 @@ async function createNewChat(code) {
     // Listen for answer from joiner
     db.ref(`chats/${code}/answer`).on("value", async (snapshot) => {
         if (snapshot.exists() && pc.signalingState !== "stable") {
+            console.log("Received answer, setting remote description...");
             const answer = JSON.parse(snapshot.val());
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
         }
@@ -116,8 +122,12 @@ async function createNewChat(code) {
     // Listen for ICE candidates from joiner
     db.ref(`chats/${code}/ice`).on("child_added", async (snapshot) => {
         const candidate = JSON.parse(snapshot.val());
+        console.log("Received ICE candidate...");
         await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => console.error("ICE candidate error:", err));
     });
+
+    // Wait for ICE gathering to complete (optional delay)
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Give time for ICE candidates
 }
 
 // Join an existing chat (Answerer)
@@ -126,11 +136,13 @@ async function joinExistingChat(code) {
     pc = new RTCPeerConnection({
         iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" } // Additional STUN server
+            { urls: "stun:stun1.l.google.com:19302" },
+            // { urls: "turn:your.turn.server:3478", username: "user", credential: "password" }
         ]
     });
     
     // Fetch and set remote offer
+    console.log("Fetching offer from Firebase...");
     const offerSnapshot = await db.ref(`chats/${code}/offer`).once("value");
     if (!offerSnapshot.exists()) {
         alert("No chat found with this code");
@@ -138,11 +150,14 @@ async function joinExistingChat(code) {
     }
     
     const offer = JSON.parse(offerSnapshot.val());
+    console.log("Setting remote offer...");
     await pc.setRemoteDescription(new RTCSessionDescription(offer));
     
     // Create and store answer
+    console.log("Creating answer...");
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
+    console.log("Setting answer in Firebase...");
     await db.ref(`chats/${code}/answer`).set(JSON.stringify(answer));
     
     // Handle data channel from offerer
@@ -159,6 +174,7 @@ async function joinExistingChat(code) {
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
         if (event.candidate) {
+            console.log("Sending ICE candidate...");
             db.ref(`chats/${code}/ice`).push().set(JSON.stringify(event.candidate));
         }
     };
@@ -166,21 +182,28 @@ async function joinExistingChat(code) {
     // Listen for ICE candidates from offerer
     db.ref(`chats/${code}/ice`).on("child_added", async (snapshot) => {
         const candidate = JSON.parse(snapshot.val());
+        console.log("Received ICE candidate...");
         await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => console.error("ICE candidate error:", err));
     });
+
+    // Wait for ICE gathering to complete (optional delay)
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Give time for ICE candidates
 }
 
 // Send message via data channel
 function sendMessage() {
     const message = messageInput.value.trim();
-    if (message && dataChannel && dataChannel.readyState === "open") {
-        dataChannel.send(message);
-        displayMessage(`You: ${message}`);
-        messageInput.value = "";
-    } else {
-        alert("Chat connection not established yet. Please wait for the connection to stabilize.");
-        console.log("Data channel state:", dataChannel ? dataChannel.readyState : "Not initialized");
+    if (!message) return;
+    if (!dataChannel || dataChannel.readyState !== "open") {
+        console.log("Waiting for connection, state:", dataChannel ? dataChannel.readyState : "Not initialized");
+        statusDiv.textContent = "Status: Connecting...";
+        setTimeout(() => sendMessage(), 1000); // Retry after 1 second
+        return;
     }
+    dataChannel.send(message);
+    displayMessage(`You: ${message}`);
+    messageInput.value = "";
+    statusDiv.textContent = "Status: Connected";
 }
 
 // Clear chat messages
@@ -193,6 +216,8 @@ function clearChat() {
         dataChannel = null;
         currentCode = null;
         generateCodeBtn.disabled = false;
+        // Optionally clear Firebase data
+        if (currentCode) db.ref(`chats/${currentCode}`).remove();
     }
 }
 
@@ -226,7 +251,9 @@ joinChatBtn.addEventListener("click", async () => {
         return;
     }
     currentCode = code;
+    joinChatBtn.disabled = true;
     await joinExistingChat(code);
+    joinChatBtn.disabled = false;
 });
 
 sendMessageBtn.addEventListener("click", sendMessage);
