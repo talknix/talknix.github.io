@@ -22,11 +22,18 @@ const database = firebase.database();
 let localConnection, remoteConnection;
 let dataChannel;
 
-// Function to generate a random 7-digit code
+// Function to generate a unique 7-digit code only once per session
 function generateCode() {
-    let code = Math.floor(1000000 + Math.random() * 9000000); // Generate 7-digit number
-    document.getElementById("codeInput").value = code; // Display the code
+    let existingCode = localStorage.getItem("chatCode");
+    if (!existingCode) {
+        let code = Math.floor(1000000 + Math.random() * 9000000); // Generate a 7-digit code
+        localStorage.setItem("chatCode", code); // Store in localStorage
+        document.getElementById("codeInput").value = code; // Display the code
+    } else {
+        document.getElementById("codeInput").value = existingCode; // Reuse existing code
+    }
 }
+
 
 // Function to join chat (setup WebRTC)
 async function joinChat() {
