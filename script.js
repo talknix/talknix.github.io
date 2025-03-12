@@ -1,11 +1,20 @@
+// Wait until DOM is fully loaded before adding event listeners
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("generateBtn").addEventListener("click", generateCode);
+    document.getElementById("joinBtn").addEventListener("click", joinChat);
+    document.getElementById("sendBtn").addEventListener("click", sendMessage);
+});
+
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
-  authDomain: "talknix-p2p.firebaseapp.com",
-  databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "talknix-p2p",
-  storageBucket: "talknix-p2p.firebasestorage.app",
-  messagingSenderId: "1091516076156",
+    apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
+    authDomain: "talknix-p2p.firebaseapp.com",
+    databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "talknix-p2p",
+    storageBucket: "talknix-p2p.firebasestorage.app",
+    messagingSenderId: "1091516076156",
 };
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
