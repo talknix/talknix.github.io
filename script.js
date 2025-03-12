@@ -5,7 +5,7 @@ const firebaseConfig = {
   projectId: "talknix-p2p",
   storageBucket: "talknix-p2p.firebasestorage.app",
   messagingSenderId: "1091516076156",
-
+};
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
