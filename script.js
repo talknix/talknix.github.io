@@ -10,6 +10,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+console.log("Firebase initialized successfully");
 const db = firebase.database();
 
 // Global variables
@@ -28,9 +29,12 @@ const messagesDiv = document.getElementById("messages");
 // Generate 7-digit unique code
 async function generateCode() {
     try {
+        console.log("Fetching IP info...");
         const response = await fetch(`https://ipinfo.io/json?token=${IPINFO_TOKEN}`);
+        console.log("Response status:", response.status);
         if (!response.ok) throw new Error("Failed to fetch IP info");
         const ipInfo = await response.json();
+        console.log("IP Info:", ipInfo);
         
         const country = ipInfo.country || "XX";
         const region = ipInfo.region || "Unknown";
@@ -38,11 +42,13 @@ async function generateCode() {
         const timestamp = Date.now().toString();
         
         const strToHash = country + region + isp + timestamp;
+        console.log("String to hash:", strToHash);
         const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(strToHash));
         const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
         const hashBigInt = BigInt("0x" + hashHex);
         
         const code = ((hashBigInt % 9000000n) + 1000000n).toString();
+        console.log("Generated code:", code);
         return code;
     } catch (error) {
         console.error("Error generating code:", error);
@@ -61,7 +67,11 @@ function displayMessage(message) {
 
 // Create a new chat (Offerer)
 async function createNewChat(code) {
-    pc = new RTCPeerConnection();
+    pc = new RTCPeerConnection({
+        iceServers: [
+            { urls: "stun:stun.l.google.com:19302" } // Add STUN server for better connectivity
+        ]
+    });
     
     // Create data channel for messaging
     dataChannel = pc.createDataChannel("chat");
@@ -97,7 +107,11 @@ async function createNewChat(code) {
 
 // Join an existing chat (Answerer)
 async function joinExistingChat(code) {
-    pc = new RTCPeerConnection();
+    pc = new RTCPeerConnection({
+        iceServers: [
+            { urls: "stun:stun.l.google.com:19302" } // Add STUN server for better connectivity
+        ]
+    });
     
     // Fetch and set remote offer
     const offerSnapshot = await db.ref(`chats/${code}/offer`).once("value");
