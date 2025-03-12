@@ -1,4 +1,3 @@
-// Firebase Config (Replace with your Firebase details)
 const firebaseConfig = {
   apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
   authDomain: "talknix-p2p.firebaseapp.com",
@@ -6,55 +5,110 @@ const firebaseConfig = {
   projectId: "talknix-p2p",
   storageBucket: "talknix-p2p.firebasestorage.app",
   messagingSenderId: "1091516076156",
-  appId: "1:1091516076156:web:09337436dcc867760279f9",
- 
-};
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const peer = new RTCPeerConnection();
+const database = firebase.database();
 
-// Function to generate a 7-digit random ID
-function generateID() {
-    return Math.floor(1000000 + Math.random() * 9000000).toString();
+let localConnection, remoteConnection;
+let dataChannel;
+
+// Function to generate a random 7-digit code
+function generateCode() {
+    let code = Math.floor(1000000 + Math.random() * 9000000); // Generate 7-digit number
+    document.getElementById("codeInput").value = code; // Display the code
 }
 
-// Function to create connection and store SDP/ICE
-async function createConnection() {
-    const connectionID = generateID();
-    alert("Your connection ID: " + connectionID);
-    document.getElementById("connectionID").innerText = connectionID; // Display ID
+// Function to join chat (setup WebRTC)
+async function joinChat() {
+    let code = document.getElementById("codeInput").value;
+    if (code.length !== 7) {
+        alert("Please enter a valid 7-digit code!");
+        return;
+    }
 
-    const offer = await peer.createOffer();
-    await peer.setLocalDescription(offer);
+    localConnection = new RTCPeerConnection();
+    dataChannel = localConnection.createDataChannel("chat");
 
-    db.ref("connections/" + connectionID).set({
-        sdp: offer.sdp
+    dataChannel.onmessage = (event) => displayMessage("Peer", event.data);
+    dataChannel.onopen = () => console.log("Data channel opened");
+    dataChannel.onclose = () => console.log("Data channel closed");
+
+    localConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            database.ref("chats/" + code + "/ice").push(event.candidate);
+        }
+    };
+
+    let offer = await localConnection.createOffer();
+    await localConnection.setLocalDescription(offer);
+
+    database.ref("chats/" + code).set({ offer });
+
+    database.ref("chats/" + code + "/answer").on("value", async (snapshot) => {
+        if (snapshot.exists()) {
+            let answer = snapshot.val();
+            await localConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        }
     });
 
-    peer.onicecandidate = (event) => {
-        if (event.candidate) {
-            db.ref("connections/" + connectionID + "/ice").push(event.candidate);
-        }
-    };
+    database.ref("chats/" + code + "/ice").on("child_added", async (snapshot) => {
+        let candidate = snapshot.val();
+        await localConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    });
+
+    alert("Waiting for peer to join...");
 }
 
-// Function to join connection using 7-digit ID
-async function joinConnection() {
-    const connectionID = document.getElementById("joinCode").value;
-    const data = await db.ref("connections/" + connectionID).get();
-    if (!data.exists()) return alert("Invalid code!");
+// Function to accept connection
+async function acceptChat() {
+    let code = document.getElementById("codeInput").value;
+    if (code.length !== 7) {
+        alert("Please enter a valid 7-digit code!");
+        return;
+    }
 
-    const remoteSDP = new RTCSessionDescription({ type: "offer", sdp: data.val().sdp });
-    await peer.setRemoteDescription(remoteSDP);
+    remoteConnection = new RTCPeerConnection();
+    remoteConnection.ondatachannel = (event) => {
+        dataChannel = event.channel;
+        dataChannel.onmessage = (e) => displayMessage("Peer", e.data);
+    };
 
-    const answer = await peer.createAnswer();
-    await peer.setLocalDescription(answer);
-    db.ref("connections/" + connectionID + "/answer").set(answer.sdp);
-
-    peer.onicecandidate = (event) => {
+    remoteConnection.onicecandidate = (event) => {
         if (event.candidate) {
-            db.ref("connections/" + connectionID + "/ice").push(event.candidate);
+            database.ref("chats/" + code + "/ice").push(event.candidate);
         }
     };
+
+    let snapshot = await database.ref("chats/" + code + "/offer").once("value");
+    if (!snapshot.exists()) {
+        alert("No active chat found for this code!");
+        return;
+    }
+
+    let offer = snapshot.val();
+    await remoteConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+    let answer = await remoteConnection.createAnswer();
+    await remoteConnection.setLocalDescription(answer);
+
+    database.ref("chats/" + code + "/answer").set(answer);
+}
+
+// Function to send messages
+function sendMessage() {
+    let message = document.getElementById("messageInput").value;
+    if (message.trim() !== "" && dataChannel.readyState === "open") {
+        dataChannel.send(message);
+        displayMessage("You", message);
+        document.getElementById("messageInput").value = ""; // Clear input
+    }
+}
+
+// Function to display messages in chat
+function displayMessage(sender, message) {
+    let messageBox = document.getElementById("messages");
+    let newMessage = document.createElement("div");
+    newMessage.textContent = sender + ": " + message;
+    messageBox.appendChild(newMessage);
 }
