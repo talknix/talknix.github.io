@@ -1,61 +1,60 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// Firebase Configuration (Replace with your Firebase credentials)
+// Firebase Config (Replace with your Firebase details)
 const firebaseConfig = {
-    apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
-    authDomain: "talknix-p2p.firebaseapp.com",
-    projectId: "talknix-p2p",
-    storageBucket: "talknix-p2p.firebasestorage.app",
-    messagingSenderId: "1091516076156",
-    appId: "1:1091516076156:web:09337436dcc867760279f9"
+  apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
+  authDomain: "talknix-p2p.firebaseapp.com",
+  databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "talknix-p2p",
+  storageBucket: "talknix-p2p.firebasestorage.app",
+  messagingSenderId: "1091516076156",
+  appId: "1:1091516076156:web:09337436dcc867760279f9",
+ 
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const peer = new RTCPeerConnection();
 
-// Function to Fetch User's Country, Region, and ISP
-async function getUserLocation() {
-    let response = await fetch('https://ipapi.co/json/');
-    let data = await response.json();
-    return {
-        country: data.country_code,  // Example: "IN" for India
-        region: data.region_code,    // Example: "KA" for Karnataka
-        isp: data.org.replace(/\s+/g, '').substring(0, 3) // First 3 characters of ISP
+// Function to generate a 7-digit random ID
+function generateID() {
+    return Math.floor(1000000 + Math.random() * 9000000).toString();
+}
+
+// Function to create connection and store SDP/ICE
+async function createConnection() {
+    const connectionID = generateID();
+    alert("Your connection ID: " + connectionID);
+    document.getElementById("connectionID").innerText = connectionID; // Display ID
+
+    const offer = await peer.createOffer();
+    await peer.setLocalDescription(offer);
+
+    db.ref("connections/" + connectionID).set({
+        sdp: offer.sdp
+    });
+
+    peer.onicecandidate = (event) => {
+        if (event.candidate) {
+            db.ref("connections/" + connectionID + "/ice").push(event.candidate);
+        }
     };
 }
 
-// Function to Generate a Unique 7-Digit ID
-async function generateID() {
-    let location = await getUserLocation();
-    let randomNum = Math.floor(100 + Math.random() * 900); // Random 3-digit number
-    let uniqueID = `${location.country}${location.region}${location.isp}${randomNum}`.substring(0, 7); // Ensure 7 chars
+// Function to join connection using 7-digit ID
+async function joinConnection() {
+    const connectionID = document.getElementById("joinCode").value;
+    const data = await db.ref("connections/" + connectionID).get();
+    if (!data.exists()) return alert("Invalid code!");
 
-    console.log("Generated ID:", uniqueID);
-    return uniqueID;
+    const remoteSDP = new RTCSessionDescription({ type: "offer", sdp: data.val().sdp });
+    await peer.setRemoteDescription(remoteSDP);
+
+    const answer = await peer.createAnswer();
+    await peer.setLocalDescription(answer);
+    db.ref("connections/" + connectionID + "/answer").set(answer.sdp);
+
+    peer.onicecandidate = (event) => {
+        if (event.candidate) {
+            db.ref("connections/" + connectionID + "/ice").push(event.candidate);
+        }
+    };
 }
-
-// Function to Store ID in Firebase Firestore
-async function storeID(userID) {
-    let id = await generateID();
-    await setDoc(doc(db, "users", userID), { id: id });
-    console.log("Stored ID in Firestore:", id);
-}
-
-// Function to Retrieve Stored ID
-async function getStoredID(userID) {
-    let docRef = doc(db, "users", userID);
-    let docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-        console.log("Retrieved ID:", docSnap.data().id);
-        return docSnap.data().id;
-    } else {
-        console.log("No ID found for this user.");
-        return null;
-    }
-}
-
-// Run Script Automatically (Change 'user123' to any unique identifier)
-storeID("user123");
