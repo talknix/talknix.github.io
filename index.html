@@ -60,6 +60,13 @@
         button:hover {
             background-color: #0056b3;
         }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .loading::after {
+            content: " Loading...";
+        }
         #chat-window {
             background: #fafafa;
             border-radius: 5px;
@@ -97,6 +104,12 @@
             border-color: #007bff;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
         }
+        #clear-chat {
+            background-color: #dc3545;
+        }
+        #clear-chat:hover {
+            background-color: #c82333;
+        }
         @media (max-width: 480px) {
             #code-section {
                 flex-direction: column;
@@ -124,6 +137,7 @@
             <div id="input-area">
                 <input type="text" id="message-input" placeholder="Type your message">
                 <button id="send-message">Send</button>
+                <button id="clear-chat">Clear Chat</button>
             </div>
         </div>
     </div>
