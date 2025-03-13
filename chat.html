@@ -167,6 +167,7 @@
         <p id="myId">Loading your ID...</p>
         <input id="friendId" placeholder="Enter friend's 7-digit ID">
         <button id="connectButton">Connect</button>
+        <button id="retryButton" style="display:none;" onclick="retryConnection()">Retry Connection</button>
         <button id="disconnectButton" style="display:none;">Disconnect</button>
         <div id="status"></div>
         <div id="typing"></div>
@@ -335,9 +336,19 @@
       if (isInitiator) {
         pc = new RTCPeerConnection({
           iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" }
+            { urls: "stun:ss-turn1.xirsys.com" },
+            {
+              username: "PTUNtcIVWM9xugY6ihNM92xlUZnwfOHWrrrP-JMIEYEO9YkHaJuwK5aSCTGs7UXlAAAAAGfS69VUYWxrbml4",
+              credential: "9a1feb56-0017-11f0-a5a3-0242ac140004",
+              urls: [
+                "turn:ss-turn1.xirsys.com:80?transport=udp",
+                "turn:ss-turn1.xirsys.com:3478?transport=udp",
+                "turn:ss-turn1.xirsys.com:80?transport=tcp",
+                "turn:ss-turn1.xirsys.com:3478?transport=tcp",
+                "turns:ss-turn1.xirsys.com:443?transport=tcp",
+                "turns:ss-turn1.xirsys.com:5349?transport=tcp"
+              ]
+            }
           ]
         });
         console.log("Created RTCPeerConnection for initiator");
@@ -354,18 +365,12 @@
 
         pc.oniceconnectionstatechange = () => {
           console.log("ICE connection state changed:", pc.iceConnectionState);
-          if (pc.iceConnectionState === "failed") {
-            document.getElementById("status").textContent = "Connection failed. Please try again.";
-          }
+          updateConnectionStatus();
         };
 
         pc.onconnectionstatechange = () => {
           console.log("Connection state changed:", pc.connectionState);
-          if (pc.connectionState === "connected") {
-            document.getElementById("status").textContent = "Connected!";
-          } else if (pc.connectionState === "failed") {
-            document.getElementById("status").textContent = "Connection failed. Please try again.";
-          }
+          updateConnectionStatus();
         };
 
         pc.createOffer()
@@ -433,9 +438,19 @@
       if (!isInitiator) {
         pc = new RTCPeerConnection({
           iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" }
+            { urls: "stun:ss-turn1.xirsys.com" },
+            {
+              username: "PTUNtcIVWM9xugY6ihNM92xlUZnwfOHWrrrP-JMIEYEO9YkHaJuwK5aSCTGs7UXlAAAAAGfS69VUYWxrbml4",
+              credential: "9a1feb56-0017-11f0-a5a3-0242ac140004",
+              urls: [
+                "turn:ss-turn1.xirsys.com:80?transport=udp",
+                "turn:ss-turn1.xirsys.com:3478?transport=udp",
+                "turn:ss-turn1.xirsys.com:80?transport=tcp",
+                "turn:ss-turn1.xirsys.com:3478?transport=tcp",
+                "turns:ss-turn1.xirsys.com:443?transport=tcp",
+                "turns:ss-turn1.xirsys.com:5349?transport=tcp"
+              ]
+            }
           ]
         });
         console.log("Created new RTCPeerConnection for callee, signaling state:", pc.signalingState);
@@ -454,18 +469,12 @@
 
         pc.oniceconnectionstatechange = () => {
           console.log("ICE connection state changed:", pc.iceConnectionState);
-          if (pc.iceConnectionState === "failed") {
-            document.getElementById("status").textContent = "Connection failed. Please try again.";
-          }
+          updateConnectionStatus();
         };
 
         pc.onconnectionstatechange = () => {
           console.log("Connection state changed:", pc.connectionState);
-          if (pc.connectionState === "connected") {
-            document.getElementById("status").textContent = "Connected!";
-          } else if (pc.connectionState === "failed") {
-            document.getElementById("status").textContent = "Connection failed. Please try again.";
-          }
+          updateConnectionStatus();
         };
 
         db.ref(`calls/${callId}/offer`).once("value", async (offerSnap) => {
@@ -536,6 +545,7 @@
         console.log("Data channel opened!");
         document.getElementById("status").textContent = "Connected!";
         document.getElementById("disconnectButton").style.display = "block";
+        document.getElementById("retryButton").style.display = "none";
       };
       dc.onmessage = (e) => {
         console.log("Received message:", e.data);
@@ -563,7 +573,7 @@
       if (!msg) return;
 
       if (!dc || dc.readyState !== "open") {
-        alert("Not connected yet! Please wait for the connection to be established.");
+        alert("Not connected yet! Please wait for the connection to be established or retry.");
         return;
       }
 
@@ -596,10 +606,39 @@
         pc = null;
         document.getElementById("status").textContent = "Disconnected";
         document.getElementById("disconnectButton").style.display = "none";
+        document.getElementById("retryButton").style.display = "none";
         const ids = callId.split("_to_");
         db.ref(`users/${ids[0]}/outgoingCalls/${callId}`).remove();
         db.ref(`users/${ids[1]}/incomingCalls/${callId}`).remove();
         db.ref(`calls/${callId}`).remove();
+      }
+    }
+
+    function retryConnection() {
+      console.log("Retrying connection...");
+      disconnect();
+      const friendId = document.getElementById("friendId").value;
+      if (friendId) {
+        initiateChat(friendId);
+      } else {
+        alert("Please enter a friend ID to retry!");
+      }
+    }
+
+    function updateConnectionStatus() {
+      if (pc) {
+        if (pc.iceConnectionState === "failed" || pc.connectionState === "failed") {
+          console.log("Connection failed, showing retry option");
+          document.getElementById("status").textContent = "Connection failed! Please check your network or retry.";
+          document.getElementById("retryButton").style.display = "block";
+        } else if (pc.iceConnectionState === "connected" && pc.connectionState === "connected") {
+          console.log("Connection established");
+          document.getElementById("status").textContent = "Connected!";
+          document.getElementById("disconnectButton").style.display = "block";
+          document.getElementById("retryButton").style.display = "none";
+        } else {
+          document.getElementById("status").textContent = "Connecting... Please wait.";
+        }
       }
     }
 
@@ -643,6 +682,7 @@
     // Add event listeners
     console.log("Adding event listeners...");
     document.getElementById("connectButton").addEventListener("click", connect);
+    document.getElementById("retryButton").addEventListener("click", retryConnection);
     document.getElementById("disconnectButton").addEventListener("click", disconnect);
     document.getElementById("sendButton").addEventListener("click", sendMessage);
     document.getElementById("message").addEventListener("input", updateTyping);
