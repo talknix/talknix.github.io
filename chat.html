@@ -111,6 +111,7 @@
     <input id="friendId" placeholder="Enter friend's 7-digit ID">
     <button id="connectButton">Connect</button>
     <button id="disconnectButton" style="display:none;">Disconnect</button>
+    <button id="logoutButton">Logout</button>
     <div id="status"></div>
     <div id="typing"></div>
     <div id="chat"></div>
@@ -144,7 +145,7 @@
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    console.log("Firebase initialized in chat.html:", firebase.app().name); // Debugging
+    console.log("Firebase initialized in chat.html:", firebase.app().name);
     const auth = firebase.auth();
     const db = firebase.database();
 
@@ -152,6 +153,7 @@
 
     // Check authentication state
     auth.onAuthStateChanged(async (user) => {
+      console.log("Auth state changed");
       if (!user) {
         console.log("No user authenticated, redirecting to index.html");
         window.location.href = "index.html";
@@ -194,6 +196,7 @@
     }
 
     function initiateChat(friendId) {
+      console.log("Initiating chat with friend ID:", friendId);
       callId = `${myId}_to_${friendId}`;
       pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
       dc = pc.createDataChannel("chat");
@@ -206,35 +209,44 @@
       };
       pc.createOffer()
         .then((offer) => pc.setLocalDescription(offer))
-        .then(() => db.ref(`calls/${callId}/offer`).set(pc.localDescription));
-
+        .then(() => db.ref(`calls/${callId}/offer`).set(pc.localDescription))
+        .catch((error) => console.error("Error creating offer:", error));
+      
       db.ref(`calls/${callId}/answer`).on("value", (snapshot) => {
         if (snapshot.val()) {
-          pc.setRemoteDescription(snapshot.val());
+          pc.setRemoteDescription(snapshot.val())
+            .catch((error) => console.error("Error setting remote description:", error));
         }
       });
+      
       db.ref(`calls/${callId}/iceCandidates/${friendId}`).on("child_added", (snapshot) => {
-        pc.addIceCandidate(snapshot.val());
+        pc.addIceCandidate(snapshot.val())
+          .catch((error) => console.error("Error adding ICE candidate:", error));
       });
     }
 
     function listenForCalls() {
+      console.log("Listening for calls for ID:", myId);
       db.ref("calls").orderByKey().startAt(`${myId}_to`).on("child_added", async (snapshot) => {
         pendingCallId = snapshot.key;
         const callerId = pendingCallId.split("_to_")[0];
         const callerSnapshot = await db.ref(`users/${callerId}`).once("value");
         const callerData = callerSnapshot.val();
         showRequestPopup(callerId, callerData.displayName);
+      }, (error) => {
+        console.error("Error listening for calls:", error);
       });
     }
 
     function showRequestPopup(callerId, displayName) {
+      console.log("Showing request popup for caller:", callerId);
       const popup = document.getElementById("requestPopup");
       document.getElementById("requestMessage").textContent = `Incoming chat from ${displayName} (${callerId})`;
       popup.style.display = "block";
     }
 
     function acceptRequest() {
+      console.log("Accepting chat request, callId:", pendingCallId);
       callId = pendingCallId;
       pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
       pc.ondatachannel = (e) => {
@@ -247,7 +259,8 @@
         pc.setRemoteDescription(offer)
           .then(() => pc.createAnswer())
           .then((answer) => pc.setLocalDescription(answer))
-          .then(() => db.ref(`calls/${callId}/answer`).set(pc.localDescription));
+          .then(() => db.ref(`calls/${callId}/answer`).set(pc.localDescription))
+          .catch((error) => console.error("Error accepting request:", error));
       });
 
       pc.onicecandidate = (e) => {
@@ -255,31 +268,40 @@
           db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
         }
       };
+      
       db.ref(`calls/${callId}/iceCandidates/${callId.split("_to_")[0]}`).on("child_added", (snapshot) => {
-        pc.addIceCandidate(snapshot.val());
+        pc.addIceCandidate(snapshot.val())
+          .catch((error) => console.error("Error adding ICE candidate:", error));
       });
 
       hideRequestPopup();
     }
 
     function rejectRequest() {
+      console.log("Rejecting chat request, callId:", pendingCallId);
       db.ref(`calls/${pendingCallId}`).remove();
       hideRequestPopup();
     }
 
     function hideRequestPopup() {
+      console.log("Hiding request popup");
       document.getElementById("requestPopup").style.display = "none";
       pendingCallId = null;
     }
 
     function setupChat() {
+      console.log("Setting up chat, callId:", callId);
       dc.onopen = () => {
         document.getElementById("status").textContent = "Connected!";
         document.getElementById("disconnectButton").style.display = "block";
       };
-      dc.onmessage = (e) => addMessage(`Friend: ${e.data}`);
+      dc.onmessage = (e) => {
+        addMessage(`Friend: ${e.data}`);
+      };
       db.ref(`calls/${callId}/typing`).on("value", (snapshot) => {
         document.getElementById("typing").textContent = snapshot.val() ? "Friend is typing..." : "";
+      }, (error) => {
+        console.error("Error listening for typing:", error);
       });
     }
 
@@ -299,7 +321,9 @@
       if (dc && dc.readyState === "open") {
         db.ref(`calls/${callId}/typing`).set(true);
         clearTimeout(window.typingTimeout);
-        window.typingTimeout = setTimeout(() => db.ref(`calls/${callId}/typing`).set(false), 1000);
+        window.typingTimeout = setTimeout(() => {
+          db.ref(`calls/${callId}/typing`).set(false);
+        }, 1000);
       }
     }
 
@@ -325,15 +349,26 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    function logout() {
+      auth.signOut().then(() => {
+        localStorage.removeItem("userId");
+        window.location.href = "index.html";
+      }).catch((error) => {
+        console.error("Logout error:", error);
+      });
+    }
+
     // Add event listeners
+    console.log("Adding event listeners...");
     document.getElementById("connectButton").addEventListener("click", connect);
     document.getElementById("disconnectButton").addEventListener("click", disconnect);
     document.getElementById("sendButton").addEventListener("click", sendMessage);
     document.getElementById("message").addEventListener("input", updateTyping);
     document.getElementById("acceptButton").addEventListener("click", acceptRequest);
     document.getElementById("rejectButton").addEventListener("click", rejectRequest);
+    document.getElementById("logoutButton").addEventListener("click", logout);
 
-    console.log("Event listeners added successfully"); // Debugging
+    console.log("Event listeners added successfully");
   </script>
 </body>
 </html>
