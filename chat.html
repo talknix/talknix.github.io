@@ -333,15 +333,41 @@
       db.ref(`users/${friendId}/incomingCalls/${callId}`).set(callData);
 
       if (isInitiator) {
-        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-        dc = pc.createDataChannel("chat");
+        pc = new RTCPeerConnection({
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" },
+            { urls: "stun:stun2.l.google.com:19302" }
+          ]
+        });
+        console.log("Created RTCPeerConnection for initiator");
 
+        dc = pc.createDataChannel("chat");
         setupChat();
+
         pc.onicecandidate = (e) => {
           if (e.candidate) {
+            console.log("Sending ICE candidate:", e.candidate);
             db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
           }
         };
+
+        pc.oniceconnectionstatechange = () => {
+          console.log("ICE connection state changed:", pc.iceConnectionState);
+          if (pc.iceConnectionState === "failed") {
+            document.getElementById("status").textContent = "Connection failed. Please try again.";
+          }
+        };
+
+        pc.onconnectionstatechange = () => {
+          console.log("Connection state changed:", pc.connectionState);
+          if (pc.connectionState === "connected") {
+            document.getElementById("status").textContent = "Connected!";
+          } else if (pc.connectionState === "failed") {
+            document.getElementById("status").textContent = "Connection failed. Please try again.";
+          }
+        };
+
         pc.createOffer()
           .then((offer) => {
             console.log("Created offer:", offer);
@@ -405,12 +431,41 @@
       const isInitiator = myId === ids[0];
 
       if (!isInitiator) {
-        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        pc = new RTCPeerConnection({
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" },
+            { urls: "stun:stun2.l.google.com:19302" }
+          ]
+        });
         console.log("Created new RTCPeerConnection for callee, signaling state:", pc.signalingState);
 
         pc.ondatachannel = (e) => {
           dc = e.channel;
           setupChat();
+        };
+
+        pc.onicecandidate = (e) => {
+          if (e.candidate) {
+            console.log("Sending ICE candidate:", e.candidate);
+            db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
+          }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+          console.log("ICE connection state changed:", pc.iceConnectionState);
+          if (pc.iceConnectionState === "failed") {
+            document.getElementById("status").textContent = "Connection failed. Please try again.";
+          }
+        };
+
+        pc.onconnectionstatechange = () => {
+          console.log("Connection state changed:", pc.connectionState);
+          if (pc.connectionState === "connected") {
+            document.getElementById("status").textContent = "Connected!";
+          } else if (pc.connectionState === "failed") {
+            document.getElementById("status").textContent = "Connection failed. Please try again.";
+          }
         };
 
         db.ref(`calls/${callId}/offer`).once("value", async (offerSnap) => {
@@ -424,23 +479,19 @@
           console.log("Current signaling state before setting offer:", pc.signalingState);
 
           try {
-            // Ensure the offer is a valid RTCSessionDescription
             const sessionDescription = new RTCSessionDescription({
               type: offer.type,
               sdp: offer.sdp
             });
 
-            // Set the remote description (offer)
             await pc.setRemoteDescription(sessionDescription);
             console.log("Remote description (offer) set successfully, signaling state:", pc.signalingState);
 
-            // Create and set the answer
             const answer = await pc.createAnswer();
             console.log("Created answer:", answer);
             await pc.setLocalDescription(answer);
             console.log("Local description (answer) set, signaling state:", pc.signalingState);
 
-            // Save the answer to Firebase
             await db.ref(`calls/${callId}/answer`).set({
               type: pc.localDescription.type,
               sdp: pc.localDescription.sdp
@@ -450,13 +501,6 @@
             console.error("Error accepting request:", error);
           }
         });
-
-        pc.onicecandidate = (e) => {
-          if (e.candidate) {
-            console.log("Sending ICE candidate:", e.candidate);
-            db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
-          }
-        };
 
         db.ref(`calls/${callId}/iceCandidates/${ids[0]}`).on("child_added", (snapshot) => {
           const candidate = snapshot.val();
@@ -489,16 +533,23 @@
     function setupChat() {
       console.log("Setting up chat, callId:", callId);
       dc.onopen = () => {
+        console.log("Data channel opened!");
         document.getElementById("status").textContent = "Connected!";
         document.getElementById("disconnectButton").style.display = "block";
       };
       dc.onmessage = (e) => {
+        console.log("Received message:", e.data);
         addMessage(`Friend: ${e.data}`);
         db.ref(`users/${myId}/chatHistory/${callId}`).push({
           sender: "Friend",
           text: e.data,
           timestamp: firebase.database.ServerValue.TIMESTAMP
         });
+      };
+      dc.onclose = () => {
+        console.log("Data channel closed");
+        document.getElementById("status").textContent = "Disconnected";
+        document.getElementById("disconnectButton").style.display = "none";
       };
       db.ref(`calls/${callId}/typing`).on("value", (snapshot) => {
         document.getElementById("typing").textContent = snapshot.val() ? "Friend is typing..." : "";
@@ -508,20 +559,24 @@
     }
 
     function sendMessage() {
-      const msg = document.getElementById("message").value;
-      if (dc && dc.readyState === "open") {
-        dc.send(msg);
-        addMessage(`You: ${msg}`, true);
-        db.ref(`users/${myId}/chatHistory/${callId}`).push({
-          sender: "You",
-          text: msg,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-        document.getElementById("message").value = "";
-        db.ref(`calls/${callId}/typing`).set(false);
-      } else {
-        alert("Not connected yet!");
+      const msg = document.getElementById("message").value.trim();
+      if (!msg) return;
+
+      if (!dc || dc.readyState !== "open") {
+        alert("Not connected yet! Please wait for the connection to be established.");
+        return;
       }
+
+      console.log("Sending message:", msg);
+      dc.send(msg);
+      addMessage(`You: ${msg}`, true);
+      db.ref(`users/${myId}/chatHistory/${callId}`).push({
+        sender: "You",
+        text: msg,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+      document.getElementById("message").value = "";
+      db.ref(`calls/${callId}/typing`).set(false);
     }
 
     function updateTyping() {
