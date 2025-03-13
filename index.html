@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register - Talknix P2P Chat</title>
+  <title>Register/Login - Talknix P2P Chat</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -43,7 +43,8 @@
       border-radius: 5px;
       cursor: pointer;
       transition: background 0.3s;
-      width: 100%;
+      width: 48%;
+      margin: 5px 1%;
     }
     button:hover {
       background: #1e3c72;
@@ -52,22 +53,40 @@
       color: #555;
       margin: 10px 0;
     }
-    #loginForm, #detailsForm {
+    #loginForm, #registerForm, #detailsForm {
       display: block;
     }
     #detailsForm {
       display: none;
+    }
+    .form-toggle {
+      color: #2a5298;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Register/Login for Talknix P2P Chat</h1>
+    <!-- Login Form -->
     <div id="loginForm">
-      <input id="email" type="email" placeholder="Email">
-      <input id="password" type="password" placeholder="Password">
-      <button id="loginButton">Login / Register</button>
+      <input id="loginEmail" type="email" placeholder="Email">
+      <input id="loginPassword" type="password" placeholder="Password">
+      <button id="loginButton">Login</button>
+      <button id="showRegisterButton">Register</button>
+      <p class="form-toggle" id="showRegisterLink">Don't have an account? Register here.</p>
     </div>
+    <!-- Register Form -->
+    <div id="registerForm" style="display: none;">
+      <input id="registerEmail" type="email" placeholder="Email">
+      <input id="registerPassword" type="password" placeholder="Password">
+      <button id="registerButton">Register</button>
+      <button id="showLoginButton">Login</button>
+      <p class="form-toggle" id="showLoginLink">Already have an account? Login here.</p>
+    </div>
+    <!-- Details Form -->
     <div id="detailsForm">
       <input id="realName" placeholder="Your Real Name (e.g., Alice Smith)">
       <input id="displayName" placeholder="Display Name (e.g., Alice)">
@@ -96,6 +115,7 @@
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
+    console.log("Firebase initialized:", firebase.app().name); // Debugging
     const auth = firebase.auth();
     const db = firebase.database();
 
@@ -114,8 +134,8 @@
     }
 
     async function login() {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
       const status = document.getElementById("status");
 
       if (!email || !password) {
@@ -128,24 +148,44 @@
         return;
       }
 
-      status.textContent = "Processing...";
+      status.textContent = "Logging in...";
+      console.log("Attempting login with email:", email); // Debugging
 
       try {
         let userCredential = await auth.signInWithEmailAndPassword(email, password);
+        console.log("Login successful, user:", userCredential.user.email); // Debugging
         await handleUser(userCredential.user);
       } catch (error) {
-        if (error.code === "auth/user-not-found") {
-          try {
-            userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            await handleUser(userCredential.user);
-          } catch (regError) {
-            status.textContent = `Registration failed: ${regError.message}`;
-            console.error("Registration error:", regError);
-          }
-        } else {
-          status.textContent = `Login failed: ${error.message}`;
-          console.error("Login error:", error);
-        }
+        status.textContent = `Login failed: ${error.message}`;
+        console.error("Login error:", error);
+      }
+    }
+
+    async function register() {
+      const email = document.getElementById("registerEmail").value.trim();
+      const password = document.getElementById("registerPassword").value.trim();
+      const status = document.getElementById("status");
+
+      if (!email || !password) {
+        status.textContent = "Please enter email and password!";
+        return;
+      }
+
+      if (password.length < 6) {
+        status.textContent = "Password must be at least 6 characters!";
+        return;
+      }
+
+      status.textContent = "Registering...";
+      console.log("Attempting registration with email:", email); // Debugging
+
+      try {
+        let userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        console.log("Registration successful, user:", userCredential.user.email); // Debugging
+        await handleUser(userCredential.user);
+      } catch (error) {
+        status.textContent = `Registration failed: ${error.message}`;
+        console.error("Registration error:", error);
       }
     }
 
@@ -162,6 +202,7 @@
         }
         localStorage.setItem("userId", myId);
         document.getElementById("loginForm").style.display = "none";
+        document.getElementById("registerForm").style.display = "none";
         document.getElementById("detailsForm").style.display = "block";
         document.getElementById("userIdDisplay").textContent = `Your ID: ${myId}`;
         document.getElementById("status").textContent = "Please enter your details.";
@@ -182,12 +223,12 @@
         return;
       }
 
-      // Ensure user is authenticated before writing to database
       if (!auth.currentUser) {
         status.textContent = "Authentication failed. Please log in again.";
         return;
       }
 
+      console.log("Attempting to save for user:", auth.currentUser.email, "with ID:", myId); // Debugging
       const ipDetails = await getIpDetails();
       try {
         await db.ref(`users/${myId}`).set({
@@ -209,9 +250,27 @@
       }
     }
 
+    // Toggle between Login and Register forms
+    function showRegisterForm() {
+      document.getElementById("loginForm").style.display = "none";
+      document.getElementById("registerForm").style.display = "block";
+      document.getElementById("status").textContent = "";
+    }
+
+    function showLoginForm() {
+      document.getElementById("registerForm").style.display = "none";
+      document.getElementById("loginForm").style.display = "block";
+      document.getElementById("status").textContent = "";
+    }
+
     // Add event listeners
     document.getElementById("loginButton").addEventListener("click", login);
+    document.getElementById("registerButton").addEventListener("click", register);
     document.getElementById("saveButton").addEventListener("click", saveDetails);
+    document.getElementById("showRegisterButton").addEventListener("click", showRegisterForm);
+    document.getElementById("showRegisterLink").addEventListener("click", showRegisterForm);
+    document.getElementById("showLoginButton").addEventListener("click", showLoginForm);
+    document.getElementById("showLoginLink").addEventListener("click", showLoginForm);
 
     // Handle auth state changes
     auth.onAuthStateChanged(user => {
