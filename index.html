@@ -145,202 +145,213 @@
       return snapshot.exists();
     }
 
-    async function login() {
-      const email = document.getElementById("loginEmail").value.trim();
-      const password = document.getElementById("loginPassword").value.trim();
-      const status = document.getElementById("status");
-      const emailInput = document.getElementById("loginEmail");
-      const passwordInput = document.getElementById("loginPassword");
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("DOM fully loaded, attaching event listeners...");
 
-      // Reset validation styles
-      emailInput.classList.remove("invalid");
-      passwordInput.classList.remove("invalid");
-      status.classList.remove("error");
+      async function login() {
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
+        const status = document.getElementById("status");
+        const emailInput = document.getElementById("loginEmail");
+        const passwordInput = document.getElementById("loginPassword");
 
-      if (!email) {
-        status.textContent = "Please enter your email!";
-        status.classList.add("error");
-        emailInput.classList.add("invalid");
-        return;
-      }
+        // Reset validation styles
+        emailInput.classList.remove("invalid");
+        passwordInput.classList.remove("invalid");
+        status.classList.remove("error");
 
-      if (!password) {
-        status.textContent = "Please enter your password!";
-        status.classList.add("error");
-        passwordInput.classList.add("invalid");
-        return;
-      }
-
-      if (password.length < 6) {
-        status.textContent = "Password must be at least 6 characters!";
-        status.classList.add("error");
-        passwordInput.classList.add("invalid");
-        return;
-      }
-
-      status.textContent = "Logging in...";
-      console.log("Attempting login with email:", email);
-
-      try {
-        let userCredential = await auth.signInWithEmailAndPassword(email, password);
-        console.log("Login successful, user:", userCredential.user.email);
-        await handleUser(userCredential.user);
-      } catch (error) {
-        status.textContent = `Login failed: ${error.message}`;
-        status.classList.add("error");
-        console.error("Login error:", error);
-      }
-    }
-
-    async function register() {
-      const email = document.getElementById("registerEmail").value.trim();
-      const password = document.getElementById("registerPassword").value.trim();
-      const status = document.getElementById("status");
-      const emailInput = document.getElementById("registerEmail");
-      const passwordInput = document.getElementById("registerPassword");
-
-      // Reset validation styles
-      emailInput.classList.remove("invalid");
-      passwordInput.classList.remove("invalid");
-      status.classList.remove("error");
-
-      if (!email) {
-        status.textContent = "Please enter your email!";
-        status.classList.add("error");
-        emailInput.classList.add("invalid");
-        return;
-      }
-
-      if (!password) {
-        status.textContent = "Please enter your password!";
-        status.classList.add("error");
-        passwordInput.classList.add("invalid");
-        return;
-      }
-
-      if (password.length < 6) {
-        status.textContent = "Password must be at least 6 characters!";
-        status.classList.add("error");
-        passwordInput.classList.add("invalid");
-        return;
-      }
-
-      // Check if email is already associated with a user ID
-      const emailExists = await checkEmailExists(email);
-      if (emailExists) {
-        status.textContent = "This email is already registered with an account!";
-        status.classList.add("error");
-        emailInput.classList.add("invalid");
-        return;
-      }
-
-      status.textContent = "Registering...";
-      console.log("Attempting registration with email:", email);
-
-      try {
-        let userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        console.log("Registration successful, user:", userCredential.user.email);
-        await handleUser(userCredential.user);
-      } catch (error) {
-        status.textContent = `Registration failed: ${error.message}`;
-        status.classList.add("error");
-        console.error("Registration error:", error);
-      }
-    }
-
-    async function handleUser(user) {
-      let myId = localStorage.getItem("userId");
-      const snapshot = await db.ref(`users/${myId}`).once("value");
-
-      if (!myId || !snapshot.exists()) {
-        let unique = false;
-        while (!unique) {
-          myId = generate7DigitId();
-          const idSnapshot = await db.ref(`users/${myId}`).once("value");
-          if (!idSnapshot.exists()) {
-            unique = true;
-          }
+        if (!email) {
+          status.textContent = "Please enter your email!";
+          status.classList.add("error");
+          emailInput.classList.add("invalid");
+          return;
         }
-        localStorage.setItem("userId", myId);
+
+        if (!password) {
+          status.textContent = "Please enter your password!";
+          status.classList.add("error");
+          passwordInput.classList.add("invalid");
+          return;
+        }
+
+        if (password.length < 6) {
+          status.textContent = "Password must be at least 6 characters!";
+          status.classList.add("error");
+          passwordInput.classList.add("invalid");
+          return;
+        }
+
+        status.textContent = "Logging in...";
+        console.log("Attempting login with email:", email);
+
+        try {
+          let userCredential = await auth.signInWithEmailAndPassword(email, password);
+          console.log("Login successful, user:", userCredential.user.email);
+          await handleUser(userCredential.user);
+        } catch (error) {
+          const errorMessage = error.message;
+          if (errorMessage.includes("There is no user record")) {
+            status.textContent = "Email not registered yet. Please register first!";
+          } else {
+            status.textContent = `Login failed: ${error.message}`;
+          }
+          status.classList.add("error");
+          console.error("Login error:", error);
+        }
+      }
+
+      async function register() {
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document.getElementById("registerPassword").value.trim();
+        const status = document.getElementById("status");
+        const emailInput = document.getElementById("registerEmail");
+        const passwordInput = document.getElementById("registerPassword");
+
+        // Reset validation styles
+        emailInput.classList.remove("invalid");
+        passwordInput.classList.remove("invalid");
+        status.classList.remove("error");
+
+        if (!email) {
+          status.textContent = "Please enter your email!";
+          status.classList.add("error");
+          emailInput.classList.add("invalid");
+          return;
+        }
+
+        if (!password) {
+          status.textContent = "Please enter your password!";
+          status.classList.add("error");
+          passwordInput.classList.add("invalid");
+          return;
+        }
+
+        if (password.length < 6) {
+          status.textContent = "Password must be at least 6 characters!";
+          status.classList.add("error");
+          passwordInput.classList.add("invalid");
+          return;
+        }
+
+        // Check if email is already associated with a user ID
+        const emailExists = await checkEmailExists(email);
+        if (emailExists) {
+          status.textContent = "This email is already registered with an account!";
+          status.classList.add("error");
+          emailInput.classList.add("invalid");
+          return;
+        }
+
+        status.textContent = "Registering...";
+        console.log("Attempting registration with email:", email);
+
+        try {
+          let userCredential = await auth.createUserWithEmailAndPassword(email, password);
+          console.log("Registration successful, user:", userCredential.user.email);
+          await handleUser(userCredential.user);
+        } catch (error) {
+          status.textContent = `Registration failed: ${error.message}`;
+          status.classList.add("error");
+          console.error("Registration error:", error);
+        }
+      }
+
+      async function handleUser(user) {
+        let myId = localStorage.getItem("userId");
+        const snapshot = await db.ref(`users/${myId}`).once("value");
+
+        if (!myId || !snapshot.exists()) {
+          let unique = false;
+          while (!unique) {
+            myId = generate7DigitId();
+            const idSnapshot = await db.ref(`users/${myId}`).once("value");
+            if (!idSnapshot.exists()) {
+              unique = true;
+            }
+          }
+          localStorage.setItem("userId", myId);
+          document.getElementById("loginForm").style.display = "none";
+          document.getElementById("registerForm").style.display = "none";
+          document.getElementById("detailsForm").style.display = "block";
+          document.getElementById("userIdDisplay").textContent = `Your ID: ${myId}`;
+          document.getElementById("status").textContent = "Please enter your details.";
+        } else {
+          document.getElementById("status").textContent = `Welcome back! Redirecting...`;
+          setTimeout(() => window.location.href = "chat.html", 1000);
+        }
+      }
+
+      async function saveDetails() {
+        const realName = document.getElementById("realName").value.trim();
+        const displayName = document.getElementById("displayName").value.trim();
+        const myId = localStorage.getItem("userId");
+        const status = document.getElementById("status");
+
+        if (!realName || !displayName) {
+          status.textContent = "Please fill in all fields!";
+          status.classList.add("error");
+          return;
+        }
+
+        if (!auth.currentUser) {
+          status.textContent = "Authentication failed. Please log in again.";
+          status.classList.add("error");
+          return;
+        }
+
+        console.log("Attempting to save for user:", auth.currentUser.email, "with ID:", myId);
+        const ipDetails = await getIpDetails();
+        try {
+          await db.ref(`users/${myId}`).set({
+            email: auth.currentUser.email,
+            realName: realName,
+            displayName: displayName,
+            registered: true,
+            status: "online",
+            ip: ipDetails.ip,
+            city: ipDetails.city || "Unknown",
+            country: ipDetails.country_name || "Unknown",
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+          });
+          status.textContent = "Details saved! Redirecting...";
+          setTimeout(() => window.location.href = "chat.html", 1000);
+        } catch (error) {
+          status.textContent = `Failed to save details: ${error.message}`;
+          status.classList.add("error");
+          console.error("Save details error:", error);
+        }
+      }
+
+      // Toggle between Login and Register forms
+      function showRegisterForm() {
         document.getElementById("loginForm").style.display = "none";
+        document.getElementById("registerForm").style.display = "block";
+        document.getElementById("status").textContent = "";
+      }
+
+      function showLoginForm() {
         document.getElementById("registerForm").style.display = "none";
-        document.getElementById("detailsForm").style.display = "block";
-        document.getElementById("userIdDisplay").textContent = `Your ID: ${myId}`;
-        document.getElementById("status").textContent = "Please enter your details.";
-      } else {
-        document.getElementById("status").textContent = `Welcome back! Redirecting...`;
-        setTimeout(() => window.location.href = "chat.html", 1000);
-      }
-    }
-
-    async function saveDetails() {
-      const realName = document.getElementById("realName").value.trim();
-      const displayName = document.getElementById("displayName").value.trim();
-      const myId = localStorage.getItem("userId");
-      const status = document.getElementById("status");
-
-      if (!realName || !displayName) {
-        status.textContent = "Please fill in all fields!";
-        status.classList.add("error");
-        return;
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("status").textContent = "";
       }
 
-      if (!auth.currentUser) {
-        status.textContent = "Authentication failed. Please log in again.";
-        status.classList.add("error");
-        return;
-      }
+      // Add event listeners
+      document.getElementById("loginButton").addEventListener("click", login);
+      document.getElementById("registerButton").addEventListener("click", register);
+      document.getElementById("saveButton").addEventListener("click", saveDetails);
+      document.getElementById("showRegisterButton").addEventListener("click", showRegisterForm);
+      document.getElementById("showRegisterLink").addEventListener("click", showRegisterForm);
+      document.getElementById("showLoginButton").addEventListener("click", showLoginForm);
+      document.getElementById("showLoginLink").addEventListener("click", showLoginForm);
 
-      console.log("Attempting to save for user:", auth.currentUser.email, "with ID:", myId);
-      const ipDetails = await getIpDetails();
-      try {
-        await db.ref(`users/${myId}`).set({
-          email: auth.currentUser.email,
-          realName: realName,
-          displayName: displayName,
-          registered: true,
-          status: "online",
-          ip: ipDetails.ip,
-          city: ipDetails.city || "Unknown",
-          country: ipDetails.country_name || "Unknown",
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-        status.textContent = "Details saved! Redirecting...";
-        setTimeout(() => window.location.href = "chat.html", 1000);
-      } catch (error) {
-        status.textContent = `Failed to save details: ${error.message}`;
-        status.classList.add("error");
-        console.error("Save details error:", error);
-      }
-    }
+      // Handle auth state changes
+      auth.onAuthStateChanged((user) => {
+        if (user && localStorage.getItem("userId")) {
+          handleUser(user);
+        }
+      });
 
-    // Toggle between Login and Register forms
-    function showRegisterForm() {
-      document.getElementById("loginForm").style.display = "none";
-      document.getElementById("registerForm").style.display = "block";
-      document.getElementById("status").textContent = "";
-    }
-
-    function showLoginForm() {
-      document.getElementById("registerForm").style.display = "none";
-      document.getElementById("loginForm").style.display = "block";
-      document.getElementById("status").textContent = "";
-    }
-
-    // Add event listeners
-    document.getElementById("loginButton").addEventListener("click", login);
-    document.getElementById("registerButton").addEventListener("click", register);
-    document.getElementById("saveButton").addEventListener("click", saveDetails);
-    document.getElementById("showRegisterButton").addEventListener("click", showRegisterForm);
-    document.getElementById("showRegisterLink").addEventListener("click", showRegisterForm);
-    document.getElementById("showLoginButton").addEventListener("click", showLoginForm);
-    document.getElementById("showLoginLink").addEventListener("click", showLoginForm);
-
-    // Handle auth state changes
-    auth.onAuthStateChanged((user) => {
-      if (user && localStorage.getItem("userId")) {
-        handleUser(user);
-      }
+      console.log("Event listeners attached successfully.");
     });
   </script>
 </body>
