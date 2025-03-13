@@ -3,127 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Talknix P2P Chat</title>
+  <title>Register/Login - Talknix P2P Chat</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-      min-height: 100vh;
-      padding: 20px;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       margin: 0;
     }
     .container {
       background: white;
-      padding: 20px;
+      padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      max-width: 600px;
-      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
     }
     h1 {
-      color: #333;
-      text-align: center;
+      color: #2a5298;
       margin-bottom: 20px;
-    }
-    #chat {
-      border: 1px solid #ddd;
-      padding: 15px;
-      height: 300px;
-      overflow-y: auto;
-      background: #f9f9f9;
-      border-radius: 5px;
-      margin-bottom: 10px;
-    }
-    #chat p {
-      margin: 5px 0;
-      padding: 8px;
-      border-radius: 5px;
-      background: #e9ecef;
-    }
-    #chat p.you {
-      background: #007bff;
-      color: white;
-      text-align: right;
     }
     input {
       width: 100%;
       padding: 10px;
-      margin: 5px 0;
+      margin: 10px 0;
       border: 1px solid #ccc;
       border-radius: 5px;
       box-sizing: border-box;
     }
     button {
-      background: #007bff;
+      background: #2a5298;
       color: white;
       border: none;
-      padding: 10px;
+      padding: 10px 20px;
       border-radius: 5px;
       cursor: pointer;
       transition: background 0.3s;
-      width: 100%;
-      margin: 5px 0;
+      width: 48%;
+      margin: 5px 1%;
     }
     button:hover {
-      background: #0056b3;
+      background: #1e3c72;
     }
-    #status, #typing {
+    #status {
       color: #555;
-      font-style: italic;
-      margin: 5px 0;
+      margin: 10px 0;
     }
-    #requestPopup {
+    #loginForm, #registerForm, #detailsForm {
+      display: block;
+    }
+    #detailsForm {
       display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      text-align: center;
-      z-index: 1000;
     }
-    #requestPopup button {
-      width: 45%;
-      display: inline-block;
-      margin: 5px;
-    }
-    #requestPopup .accept {
-      background: #28a745;
-    }
-    #requestPopup .accept:hover {
-      background: #218838;
-    }
-    #requestPopup .reject {
-      background: #dc3545;
-    }
-    #requestPopup .reject:hover {
-      background: #c82333;
+    .form-toggle {
+      color: #2a5298;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Talknix P2P Chat</h1>
-    <p id="myId">Loading your ID...</p>
-    <input id="friendId" placeholder="Enter friend's 7-digit ID">
-    <button id="connectButton">Connect</button>
-    <button id="disconnectButton" style="display:none;">Disconnect</button>
-    <button id="logoutButton">Logout</button>
-    <div id="status"></div>
-    <div id="typing"></div>
-    <div id="chat"></div>
-    <input id="message" placeholder="Type a message">
-    <button id="sendButton">Send</button>
-  </div>
-
-  <!-- Incoming Request Popup -->
-  <div id="requestPopup">
-    <p id="requestMessage"></p>
-    <button class="accept" id="acceptButton">Accept</button>
-    <button class="reject" id="rejectButton">Reject</button>
+    <h1>Register/Login for Talknix P2P Chat</h1>
+    <!-- Login Form -->
+    <div id="loginForm">
+      <input id="loginEmail" type="email" placeholder="Email">
+      <input id="loginPassword" type="password" placeholder="Password">
+      <button id="loginButton">Login</button>
+      <button id="showRegisterButton">Register</button>
+      <p class="form-toggle" id="showRegisterLink">Don't have an account? Register here.</p>
+    </div>
+    <!-- Register Form -->
+    <div id="registerForm" style="display: none;">
+      <input id="registerEmail" type="email" placeholder="Email">
+      <input id="registerPassword" type="password" placeholder="Password">
+      <button id="registerButton">Register</button>
+      <button id="showLoginButton">Login</button>
+      <p class="form-toggle" id="showLoginLink">Already have an account? Login here.</p>
+    </div>
+    <!-- Details Form -->
+    <div id="detailsForm">
+      <input id="realName" placeholder="Your Real Name (e.g., Alice Smith)">
+      <input id="displayName" placeholder="Display Name (e.g., Alice)">
+      <p id="userIdDisplay"></p>
+      <button id="saveButton">Save and Proceed</button>
+    </div>
+    <p id="status"></p>
   </div>
 
   <!-- Firebase SDK (UMD Bundle) -->
@@ -145,230 +115,171 @@
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    console.log("Firebase initialized in chat.html:", firebase.app().name);
+    console.log("Firebase initialized:", firebase.app().name);
     const auth = firebase.auth();
     const db = firebase.database();
 
-    let myId, pc, dc, callId, pendingCallId;
+    function generate7DigitId() {
+      return Math.floor(1000000 + Math.random() * 9000000);
+    }
 
-    // Check authentication state
-    auth.onAuthStateChanged(async (user) => {
-      console.log("Auth state changed");
-      if (!user) {
-        console.log("No user authenticated, redirecting to index.html");
-        window.location.href = "index.html";
+    async function getIpDetails() {
+      try {
+        const response = await fetch("https://ipapi.co/json/");
+        return await response.json();
+      } catch (error) {
+        console.error("IP fetch failed:", error);
+        return { ip: "Unknown", city: "Unknown", country_name: "Unknown" };
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+      const status = document.getElementById("status");
+
+      if (!email || !password) {
+        status.textContent = "Please enter email and password!";
         return;
       }
 
-      myId = localStorage.getItem("userId");
-      if (!myId) {
-        console.log("No userId in localStorage, redirecting to index.html");
-        window.location.href = "index.html";
+      if (password.length < 6) {
+        status.textContent = "Password must be at least 6 characters!";
         return;
       }
 
+      status.textContent = "Logging in...";
+      console.log("Attempting login with email:", email);
+
+      try {
+        let userCredential = await auth.signInWithEmailAndPassword(email, password);
+        console.log("Login successful, user:", userCredential.user.email);
+        await handleUser(userCredential.user);
+      } catch (error) {
+        status.textContent = `Login failed: ${error.message}`;
+        console.error("Login error:", error);
+      }
+    }
+
+    async function register() {
+      const email = document.getElementById("registerEmail").value.trim();
+      const password = document.getElementById("registerPassword").value.trim();
+      const status = document.getElementById("status");
+
+      if (!email || !password) {
+        status.textContent = "Please enter email and password!";
+        return;
+      }
+
+      if (password.length < 6) {
+        status.textContent = "Password must be at least 6 characters!";
+        return;
+      }
+
+      status.textContent = "Registering...";
+      console.log("Attempting registration with email:", email);
+
+      try {
+        let userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        console.log("Registration successful, user:", userCredential.user.email);
+        await handleUser(userCredential.user);
+      } catch (error) {
+        status.textContent = `Registration failed: ${error.message}`;
+        console.error("Registration error:", error);
+      }
+    }
+
+    async function handleUser(user) {
+      let myId = localStorage.getItem("userId");
       const snapshot = await db.ref(`users/${myId}`).once("value");
-      if (!snapshot.exists()) {
-        console.log("User data not found in database, clearing localStorage and redirecting");
-        localStorage.removeItem("userId");
-        window.location.href = "index.html";
-        return;
-      }
 
-      console.log("User authenticated, ID:", myId);
-      document.getElementById("myId").textContent = `Your ID: ${myId}`;
-      listenForCalls();
-    });
-
-    function connect() {
-      const friendId = document.getElementById("friendId").value;
-      if (!friendId || friendId.length !== 7 || isNaN(friendId)) {
-        alert("Enter a valid 7-digit ID!");
-        return;
-      }
-      db.ref(`users/${friendId}`).once("value", (snapshot) => {
-        if (!snapshot.exists()) {
-          alert("Friend's ID does not exist!");
-        } else {
-          initiateChat(friendId);
+      if (!myId || !snapshot.exists()) {
+        let unique = false;
+        while (!unique) {
+          myId = generate7DigitId();
+          const idSnapshot = await db.ref(`users/${myId}`).once("value");
+          if (!idSnapshot.exists()) {
+            unique = true;
+          }
         }
-      });
-    }
-
-    function initiateChat(friendId) {
-      console.log("Initiating chat with friend ID:", friendId);
-      callId = `${myId}_to_${friendId}`;
-      pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-      dc = pc.createDataChannel("chat");
-
-      setupChat();
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
-        }
-      };
-      pc.createOffer()
-        .then((offer) => pc.setLocalDescription(offer))
-        .then(() => db.ref(`calls/${callId}/offer`).set(pc.localDescription))
-        .catch((error) => console.error("Error creating offer:", error));
-      
-      db.ref(`calls/${callId}/answer`).on("value", (snapshot) => {
-        if (snapshot.val()) {
-          pc.setRemoteDescription(snapshot.val())
-            .catch((error) => console.error("Error setting remote description:", error));
-        }
-      });
-      
-      db.ref(`calls/${callId}/iceCandidates/${friendId}`).on("child_added", (snapshot) => {
-        pc.addIceCandidate(snapshot.val())
-          .catch((error) => console.error("Error adding ICE candidate:", error));
-      });
-    }
-
-    function listenForCalls() {
-      console.log("Listening for calls for ID:", myId);
-      db.ref("calls").orderByKey().startAt(`${myId}_to`).on("child_added", async (snapshot) => {
-        pendingCallId = snapshot.key;
-        const callerId = pendingCallId.split("_to_")[0];
-        const callerSnapshot = await db.ref(`users/${callerId}`).once("value");
-        const callerData = callerSnapshot.val();
-        showRequestPopup(callerId, callerData.displayName);
-      }, (error) => {
-        console.error("Error listening for calls:", error);
-      });
-    }
-
-    function showRequestPopup(callerId, displayName) {
-      console.log("Showing request popup for caller:", callerId);
-      const popup = document.getElementById("requestPopup");
-      document.getElementById("requestMessage").textContent = `Incoming chat from ${displayName} (${callerId})`;
-      popup.style.display = "block";
-    }
-
-    function acceptRequest() {
-      console.log("Accepting chat request, callId:", pendingCallId);
-      callId = pendingCallId;
-      pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-      pc.ondatachannel = (e) => {
-        dc = e.channel;
-        setupChat();
-      };
-
-      db.ref(`calls/${callId}/offer`).once("value", (offerSnap) => {
-        const offer = offerSnap.val();
-        pc.setRemoteDescription(offer)
-          .then(() => pc.createAnswer())
-          .then((answer) => pc.setLocalDescription(answer))
-          .then(() => db.ref(`calls/${callId}/answer`).set(pc.localDescription))
-          .catch((error) => console.error("Error accepting request:", error));
-      });
-
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
-        }
-      };
-      
-      db.ref(`calls/${callId}/iceCandidates/${callId.split("_to_")[0]}`).on("child_added", (snapshot) => {
-        pc.addIceCandidate(snapshot.val())
-          .catch((error) => console.error("Error adding ICE candidate:", error));
-      });
-
-      hideRequestPopup();
-    }
-
-    function rejectRequest() {
-      console.log("Rejecting chat request, callId:", pendingCallId);
-      db.ref(`calls/${pendingCallId}`).remove();
-      hideRequestPopup();
-    }
-
-    function hideRequestPopup() {
-      console.log("Hiding request popup");
-      document.getElementById("requestPopup").style.display = "none";
-      pendingCallId = null;
-    }
-
-    function setupChat() {
-      console.log("Setting up chat, callId:", callId);
-      dc.onopen = () => {
-        document.getElementById("status").textContent = "Connected!";
-        document.getElementById("disconnectButton").style.display = "block";
-      };
-      dc.onmessage = (e) => {
-        addMessage(`Friend: ${e.data}`);
-      };
-      db.ref(`calls/${callId}/typing`).on("value", (snapshot) => {
-        document.getElementById("typing").textContent = snapshot.val() ? "Friend is typing..." : "";
-      }, (error) => {
-        console.error("Error listening for typing:", error);
-      });
-    }
-
-    function sendMessage() {
-      const msg = document.getElementById("message").value;
-      if (dc && dc.readyState === "open") {
-        dc.send(msg);
-        addMessage(`You: ${msg}`, true);
-        document.getElementById("message").value = "";
-        db.ref(`calls/${callId}/typing`).set(false);
+        localStorage.setItem("userId", myId);
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("registerForm").style.display = "none";
+        document.getElementById("detailsForm").style.display = "block";
+        document.getElementById("userIdDisplay").textContent = `Your ID: ${myId}`;
+        document.getElementById("status").textContent = "Please enter your details.";
       } else {
-        alert("Not connected yet!");
+        document.getElementById("status").textContent = `Welcome back! Redirecting...`;
+        setTimeout(() => window.location.href = "chat.html", 1000);
       }
     }
 
-    function updateTyping() {
-      if (dc && dc.readyState === "open") {
-        db.ref(`calls/${callId}/typing`).set(true);
-        clearTimeout(window.typingTimeout);
-        window.typingTimeout = setTimeout(() => {
-          db.ref(`calls/${callId}/typing`).set(false);
-        }, 1000);
+    async function saveDetails() {
+      const realName = document.getElementById("realName").value.trim();
+      const displayName = document.getElementById("displayName").value.trim();
+      const myId = localStorage.getItem("userId");
+      const status = document.getElementById("status");
+
+      if (!realName || !displayName) {
+        status.textContent = "Please fill in all fields!";
+        return;
+      }
+
+      if (!auth.currentUser) {
+        status.textContent = "Authentication failed. Please log in again.";
+        return;
+      }
+
+      console.log("Attempting to save for user:", auth.currentUser.email, "with ID:", myId);
+      const ipDetails = await getIpDetails();
+      try {
+        await db.ref(`users/${myId}`).set({
+          email: auth.currentUser.email,
+          realName: realName,
+          displayName: displayName,
+          registered: true,
+          status: "online",
+          ip: ipDetails.ip,
+          city: ipDetails.city || "Unknown",
+          country: ipDetails.country_name || "Unknown",
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        status.textContent = "Details saved! Redirecting...";
+        setTimeout(() => window.location.href = "chat.html", 1000);
+      } catch (error) {
+        status.textContent = `Failed to save details: ${error.message}`;
+        console.error("Save details error:", error);
       }
     }
 
-    function disconnect() {
-      if (pc) {
-        pc.close();
-        dc = null;
-        pc = null;
-        document.getElementById("status").textContent = "Disconnected";
-        document.getElementById("disconnectButton").style.display = "none";
-        db.ref(`calls/${callId}`).remove();
-      }
+    // Toggle between Login and Register forms
+    function showRegisterForm() {
+      document.getElementById("loginForm").style.display = "none";
+      document.getElementById("registerForm").style.display = "block";
+      document.getElementById("status").textContent = "";
     }
 
-    function addMessage(text, isYou = false) {
-      const chat = document.getElementById("chat");
-      const p = document.createElement("p");
-      p.textContent = text;
-      if (isYou) {
-        p.classList.add("you");
-      }
-      chat.appendChild(p);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
-    function logout() {
-      auth.signOut().then(() => {
-        localStorage.removeItem("userId");
-        window.location.href = "index.html";
-      }).catch((error) => {
-        console.error("Logout error:", error);
-      });
+    function showLoginForm() {
+      document.getElementById("registerForm").style.display = "none";
+      document.getElementById("loginForm").style.display = "block";
+      document.getElementById("status").textContent = "";
     }
 
     // Add event listeners
-    console.log("Adding event listeners...");
-    document.getElementById("connectButton").addEventListener("click", connect);
-    document.getElementById("disconnectButton").addEventListener("click", disconnect);
-    document.getElementById("sendButton").addEventListener("click", sendMessage);
-    document.getElementById("message").addEventListener("input", updateTyping);
-    document.getElementById("acceptButton").addEventListener("click", acceptRequest);
-    document.getElementById("rejectButton").addEventListener("click", rejectRequest);
-    document.getElementById("logoutButton").addEventListener("click", logout);
+    document.getElementById("loginButton").addEventListener("click", login);
+    document.getElementById("registerButton").addEventListener("click", register);
+    document.getElementById("saveButton").addEventListener("click", saveDetails);
+    document.getElementById("showRegisterButton").addEventListener("click", showRegisterForm);
+    document.getElementById("showRegisterLink").addEventListener("click", showRegisterForm);
+    document.getElementById("showLoginButton").addEventListener("click", showLoginForm);
+    document.getElementById("showLoginLink").addEventListener("click", showLoginForm);
 
-    console.log("Event listeners added successfully");
+    // Handle auth state changes
+    auth.onAuthStateChanged((user) => {
+      if (user && localStorage.getItem("userId")) {
+        handleUser(user);
+      }
+    });
   </script>
 </body>
 </html>
