@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
   <title>Register/Login - Talknix P2P Chat</title>
   <style>
     body {
@@ -35,6 +36,9 @@
       border-radius: 5px;
       box-sizing: border-box;
     }
+    input.invalid {
+      border-color: #dc3545;
+    }
     button {
       background: #2a5298;
       color: white;
@@ -52,6 +56,9 @@
     #status {
       color: #555;
       margin: 10px 0;
+    }
+    #status.error {
+      color: #dc3545;
     }
     #loginForm, #registerForm, #detailsForm {
       display: block;
@@ -133,18 +140,41 @@
       }
     }
 
+    async function checkEmailExists(email) {
+      const snapshot = await db.ref("users").orderByChild("email").equalTo(email).once("value");
+      return snapshot.exists();
+    }
+
     async function login() {
       const email = document.getElementById("loginEmail").value.trim();
       const password = document.getElementById("loginPassword").value.trim();
       const status = document.getElementById("status");
+      const emailInput = document.getElementById("loginEmail");
+      const passwordInput = document.getElementById("loginPassword");
 
-      if (!email || !password) {
-        status.textContent = "Please enter email and password!";
+      // Reset validation styles
+      emailInput.classList.remove("invalid");
+      passwordInput.classList.remove("invalid");
+      status.classList.remove("error");
+
+      if (!email) {
+        status.textContent = "Please enter your email!";
+        status.classList.add("error");
+        emailInput.classList.add("invalid");
+        return;
+      }
+
+      if (!password) {
+        status.textContent = "Please enter your password!";
+        status.classList.add("error");
+        passwordInput.classList.add("invalid");
         return;
       }
 
       if (password.length < 6) {
         status.textContent = "Password must be at least 6 characters!";
+        status.classList.add("error");
+        passwordInput.classList.add("invalid");
         return;
       }
 
@@ -157,6 +187,7 @@
         await handleUser(userCredential.user);
       } catch (error) {
         status.textContent = `Login failed: ${error.message}`;
+        status.classList.add("error");
         console.error("Login error:", error);
       }
     }
@@ -165,14 +196,41 @@
       const email = document.getElementById("registerEmail").value.trim();
       const password = document.getElementById("registerPassword").value.trim();
       const status = document.getElementById("status");
+      const emailInput = document.getElementById("registerEmail");
+      const passwordInput = document.getElementById("registerPassword");
 
-      if (!email || !password) {
-        status.textContent = "Please enter email and password!";
+      // Reset validation styles
+      emailInput.classList.remove("invalid");
+      passwordInput.classList.remove("invalid");
+      status.classList.remove("error");
+
+      if (!email) {
+        status.textContent = "Please enter your email!";
+        status.classList.add("error");
+        emailInput.classList.add("invalid");
+        return;
+      }
+
+      if (!password) {
+        status.textContent = "Please enter your password!";
+        status.classList.add("error");
+        passwordInput.classList.add("invalid");
         return;
       }
 
       if (password.length < 6) {
         status.textContent = "Password must be at least 6 characters!";
+        status.classList.add("error");
+        passwordInput.classList.add("invalid");
+        return;
+      }
+
+      // Check if email is already associated with a user ID
+      const emailExists = await checkEmailExists(email);
+      if (emailExists) {
+        status.textContent = "This email is already registered with an account!";
+        status.classList.add("error");
+        emailInput.classList.add("invalid");
         return;
       }
 
@@ -185,6 +243,7 @@
         await handleUser(userCredential.user);
       } catch (error) {
         status.textContent = `Registration failed: ${error.message}`;
+        status.classList.add("error");
         console.error("Registration error:", error);
       }
     }
@@ -222,11 +281,13 @@
 
       if (!realName || !displayName) {
         status.textContent = "Please fill in all fields!";
+        status.classList.add("error");
         return;
       }
 
       if (!auth.currentUser) {
         status.textContent = "Authentication failed. Please log in again.";
+        status.classList.add("error");
         return;
       }
 
@@ -248,6 +309,7 @@
         setTimeout(() => window.location.href = "chat.html", 1000);
       } catch (error) {
         status.textContent = `Failed to save details: ${error.message}`;
+        status.classList.add("error");
         console.error("Save details error:", error);
       }
     }
