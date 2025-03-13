@@ -72,6 +72,36 @@
       font-style: italic;
       margin: 5px 0;
     }
+    #requestPopup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      z-index: 1000;
+    }
+    #requestPopup button {
+      width: 45%;
+      display: inline-block;
+      margin: 5px;
+    }
+    #requestPopup .accept {
+      background: #28a745;
+    }
+    #requestPopup .accept:hover {
+      background: #218838;
+    }
+    #requestPopup .reject {
+      background: #dc3545;
+    }
+    #requestPopup .reject:hover {
+      background: #c82333;
+    }
   </style>
 </head>
 <body>
@@ -88,46 +118,57 @@
     <button onclick="sendMessage()">Send</button>
   </div>
 
+  <!-- Incoming Request Popup -->
+  <div id="requestPopup">
+    <p id="requestMessage"></p>
+    <button class="accept" onclick="acceptRequest()">Accept</button>
+    <button class="reject" onclick="rejectRequest()">Reject</button>
+  </div>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
 
   <script>
-   const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
   authDomain: "talknix-p2p.firebaseapp.com",
   databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "talknix-p2p",
   storageBucket: "talknix-p2p.firebasestorage.app",
   messagingSenderId: "1091516076156",
-  appId: "1:1091516076156:web:09337436dcc867760279f9",
- 
-};
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
+  appId: "1:1091516076156:web:09337436dcc867760279f9"
+ };
+    // Initialize Firebase
+    let auth, db;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.database();
+    } catch (error) {
+      document.getElementById("status").textContent = "Firebase initialization failed: " + error.message;
+      return;
+    }
 
-    let myId, pc, dc, callId;
+    let myId, pc, dc, callId, pendingCallId;
 
     auth.onAuthStateChanged(async user => {
       if (!user) {
-        window.location.href = "register.html";
+        window.location.href = "index.html";
         return;
       }
 
       myId = localStorage.getItem("userId");
       if (!myId) {
-        // If no ID exists, redirect to register even if logged in
-        window.location.href = "register.html";
+        window.location.href = "index.html";
         return;
       }
 
-      // Verify ID exists in Firebase
       const snapshot = await db.ref(`users/${myId}`).once("value");
       if (!snapshot.exists()) {
-        localStorage.removeItem("userId"); // Clear invalid ID
-        window.location.href = "register.html";
+        localStorage.removeItem("userId");
+        window.location.href = "index.html";
         return;
       }
 
@@ -172,32 +213,55 @@
     }
 
     function listenForCalls() {
-      db.ref(`calls`).orderByKey().startAt(`${myId}_to`).on("child_added", (snapshot) => {
-        callId = snapshot.key;
-        const callerId = callId.split("_to_")[0];
-        if (confirm(`Incoming chat from ${callerId}. Accept?`)) {
-          pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-          pc.ondatachannel = (e) => {
-            dc = e.channel;
-            setupChat();
-          };
-
-          db.ref(`calls/${callId}/offer`).once("value", (offerSnap) => {
-            const offer = offerSnap.val();
-            pc.setRemoteDescription(offer)
-              .then(() => pc.createAnswer())
-              .then(answer => pc.setLocalDescription(answer))
-              .then(() => db.ref(`calls/${callId}/answer`).set(pc.localDescription));
-          });
-
-          pc.onicecandidate = (e) => {
-            if (e.candidate) db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
-          };
-          db.ref(`calls/${callId}/iceCandidates/${callerId}`).on("child_added", (snapshot) => {
-            pc.addIceCandidate(snapshot.val());
-          });
-        }
+      db.ref(`calls`).orderByKey().startAt(`${myId}_to`).on("child_added", async (snapshot) => {
+        pendingCallId = snapshot.key;
+        const callerId = pendingCallId.split("_to_")[0];
+        const callerSnapshot = await db.ref(`users/${callerId}`).once("value");
+        const callerData = callerSnapshot.val();
+        showRequestPopup(callerId, callerData.displayName);
       });
+    }
+
+    function showRequestPopup(callerId, displayName) {
+      const popup = document.getElementById("requestPopup");
+      document.getElementById("requestMessage").textContent = `Incoming chat from ${displayName} (${callerId})`;
+      popup.style.display = "block";
+    }
+
+    function acceptRequest() {
+      callId = pendingCallId;
+      pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+      pc.ondatachannel = (e) => {
+        dc = e.channel;
+        setupChat();
+      };
+
+      db.ref(`calls/${callId}/offer`).once("value", (offerSnap) => {
+        const offer = offerSnap.val();
+        pc.setRemoteDescription(offer)
+          .then(() => pc.createAnswer())
+          .then(answer => pc.setLocalDescription(answer))
+          .then(() => db.ref(`calls/${callId}/answer`).set(pc.localDescription));
+      });
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
+      };
+      db.ref(`calls/${callId}/iceCandidates/${callId.split("_to_")[0]}`).on("child_added", (snapshot) => {
+        pc.addIceCandidate(snapshot.val());
+      });
+
+      hideRequestPopup();
+    }
+
+    function rejectRequest() {
+      db.ref(`calls/${pendingCallId}`).remove();
+      hideRequestPopup();
+    }
+
+    function hideRequestPopup() {
+      document.getElementById("requestPopup").style.display = "none";
+      pendingCallId = null;
     }
 
     function setupChat() {
