@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P2P Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      min-height: 100vh;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #chat {
+      border: 1px solid #ddd;
+      padding: 15px;
+      height: 300px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    #chat p {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 5px;
+      background: #e9ecef;
+    }
+    #chat p.you {
+      background: #007bff;
+      color: white;
+      text-align: right;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+      width: 100%;
+      margin: 5px 0;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #status, #typing {
+      color: #555;
+      font-style: italic;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>P2P Chat</h1>
+    <p id="myId">Loading your ID...</p>
+    <input id="friendId" placeholder="Enter friend's 7-digit ID">
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()" id="disconnect" style="display:none;">Disconnect</button>
+    <div id="status"></div>
+    <div id="typing"></div>
+    <div id="chat"></div>
+    <input id="message" placeholder="Type a message" oninput="updateTyping()">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      databaseURL: "YOUR_DATABASE_URL",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    let myId, pc, dc, callId;
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = "register.html";
+        return;
+      }
+
+      myId = localStorage.getItem("userId");
+      if (!myId) {
+        // If no ID exists, redirect to register even if logged in
+        window.location.href = "register.html";
+        return;
+      }
+
+      // Verify ID exists in Firebase
+      const snapshot = await db.ref(`users/${myId}`).once("value");
+      if (!snapshot.exists()) {
+        localStorage.removeItem("userId"); // Clear invalid ID
+        window.location.href = "register.html";
+        return;
+      }
+
+      document.getElementById("myId").textContent = `Your ID: ${myId}`;
+      listenForCalls();
+    });
+
+    function connect() {
+      const friendId = document.getElementById("friendId").value;
+      if (!friendId || friendId.length !== 7 || isNaN(friendId)) {
+        alert("Enter a valid 7-digit ID!");
+        return;
+      }
+      db.ref(`users/${friendId}`).once("value", (snapshot) => {
+        if (!snapshot.exists()) {
+          alert("Friend's ID does not exist!");
+        } else {
+          initiateChat(friendId);
+        }
+      });
+    }
+
+    function initiateChat(friendId) {
+      callId = `${myId}_to_${friendId}`;
+      pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+      dc = pc.createDataChannel("chat");
+
+      setupChat();
+      pc.onicecandidate = (e) => {
+        if (e.candidate) db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
+      };
+      pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .then(() => db.ref(`calls/${callId}/offer`).set(pc.localDescription));
+
+      db.ref(`calls/${callId}/answer`).on("value", (snapshot) => {
+        if (snapshot.val()) pc.setRemoteDescription(snapshot.val());
+      });
+      db.ref(`calls/${callId}/iceCandidates/${friendId}`).on("child_added", (snapshot) => {
+        pc.addIceCandidate(snapshot.val());
+      });
+    }
+
+    function listenForCalls() {
+      db.ref(`calls`).orderByKey().startAt(`${myId}_to`).on("child_added", (snapshot) => {
+        callId = snapshot.key;
+        const callerId = callId.split("_to_")[0];
+        if (confirm(`Incoming chat from ${callerId}. Accept?`)) {
+          pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+          pc.ondatachannel = (e) => {
+            dc = e.channel;
+            setupChat();
+          };
+
+          db.ref(`calls/${callId}/offer`).once("value", (offerSnap) => {
+            const offer = offerSnap.val();
+            pc.setRemoteDescription(offer)
+              .then(() => pc.createAnswer())
+              .then(answer => pc.setLocalDescription(answer))
+              .then(() => db.ref(`calls/${callId}/answer`).set(pc.localDescription));
+          });
+
+          pc.onicecandidate = (e) => {
+            if (e.candidate) db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
+          };
+          db.ref(`calls/${callId}/iceCandidates/${callerId}`).on("child_added", (snapshot) => {
+            pc.addIceCandidate(snapshot.val());
+          });
+        }
+      });
+    }
+
+    function setupChat() {
+      dc.onopen = () => {
+        document.getElementById("status").textContent = "Connected!";
+        document.getElementById("disconnect").style.display = "block";
+      };
+      dc.onmessage = (e) => addMessage(`Friend: ${e.data}`);
+      db.ref(`calls/${callId}/typing`).on("value", (snapshot) => {
+        document.getElementById("typing").textContent = snapshot.val() ? "Friend is typing..." : "";
+      });
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById("message").value;
+      if (dc && dc.readyState === "open") {
+        dc.send(msg);
+        addMessage(`You: ${msg}`, true);
+        document.getElementById("message").value = "";
+        db.ref(`calls/${callId}/typing`).set(false);
+      } else {
+        alert("Not connected yet!");
+      }
+    }
+
+    function updateTyping() {
+      if (dc && dc.readyState === "open") {
+        db.ref(`calls/${callId}/typing`).set(true);
+        clearTimeout(window.typingTimeout);
+        window.typingTimeout = setTimeout(() => db.ref(`calls/${callId}/typing`).set(false), 1000);
+      }
+    }
+
+    function disconnect() {
+      if (pc) {
+        pc.close();
+        dc = null;
+        pc = null;
+        document.getElementById("status").textContent = "Disconnected";
+        document.getElementById("disconnect").style.display = "none";
+        db.ref(`calls/${callId}`).remove();
+      }
+    }
+
+    function addMessage(text, isYou = false) {
+      const chat = document.getElementById("chat");
+      const p = document.createElement("p");
+      p.textContent = text;
+      if (isYou) p.classList.add("you");
+      chat.appendChild(p);
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>
