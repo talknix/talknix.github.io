@@ -3,14 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
   <title>Talknix P2P Chat</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
       min-height: 100vh;
-      padding: 20px;
       margin: 0;
+      display: flex;
+    }
+    .sidebar {
+      width: 200px;
+      background: #2a5298;
+      color: white;
+      padding: 20px;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+    .sidebar h2 {
+      margin: 0 0 20px;
+      font-size: 1.5em;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar li {
+      margin: 10px 0;
+    }
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      display: block;
+      padding: 10px;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+    .sidebar a:hover, .sidebar a.active {
+      background: #1e3c72;
+    }
+    .main-content {
+      margin-left: 220px;
+      padding: 20px;
+      flex: 1;
     }
     .container {
       background: white;
@@ -25,7 +63,7 @@
       text-align: center;
       margin-bottom: 20px;
     }
-    #chat {
+    #chat, #historyContent {
       border: 1px solid #ddd;
       padding: 15px;
       height: 300px;
@@ -34,13 +72,13 @@
       border-radius: 5px;
       margin-bottom: 10px;
     }
-    #chat p {
+    #chat p, #historyContent p {
       margin: 5px 0;
       padding: 8px;
       border-radius: 5px;
       background: #e9ecef;
     }
-    #chat p.you {
+    #chat p.you, #historyContent p.you {
       background: #007bff;
       color: white;
       text-align: right;
@@ -102,21 +140,62 @@
     #requestPopup .reject:hover {
       background: #c82333;
     }
+    #homeTab, #profileTab, #historyTab {
+      display: none;
+    }
+    #homeTab.active, #profileTab.active, #historyTab.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Talknix P2P Chat</h1>
-    <p id="myId">Loading your ID...</p>
-    <input id="friendId" placeholder="Enter friend's 7-digit ID">
-    <button id="connectButton">Connect</button>
-    <button id="disconnectButton" style="display:none;">Disconnect</button>
-    <button id="logoutButton">Logout</button>
-    <div id="status"></div>
-    <div id="typing"></div>
-    <div id="chat"></div>
-    <input id="message" placeholder="Type a message">
-    <button id="sendButton">Send</button>
+  <div class="sidebar">
+    <h2>Talknix</h2>
+    <ul>
+      <li><a href="#" id="homeLink" class="active">Home</a></li>
+      <li><a href="#" id="profileLink">Profile</a></li>
+      <li><a href="#" id="historyLink">History</a></li>
+      <li><a href="#" id="logoutLink">Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <!-- Home Tab (Chat Interface) -->
+    <div id="homeTab" class="active">
+      <div class="container">
+        <h1>Talknix P2P Chat</h1>
+        <p id="myId">Loading your ID...</p>
+        <input id="friendId" placeholder="Enter friend's 7-digit ID">
+        <button id="connectButton">Connect</button>
+        <button id="disconnectButton" style="display:none;">Disconnect</button>
+        <div id="status"></div>
+        <div id="typing"></div>
+        <div id="chat"></div>
+        <input id="message" placeholder="Type a message">
+        <button id="sendButton">Send</button>
+      </div>
+    </div>
+
+    <!-- Profile Tab -->
+    <div id="profileTab">
+      <div class="container">
+        <h1>Profile</h1>
+        <p><strong>ID:</strong> <span id="profileId"></span></p>
+        <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+        <p><strong>Real Name:</strong> <span id="profileRealName"></span></p>
+        <p><strong>Display Name:</strong> <span id="profileDisplayName"></span></p>
+        <p><strong>City:</strong> <span id="profileCity"></span></p>
+        <p><strong>Country:</strong> <span id="profileCountry"></span></p>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div id="historyTab">
+      <div class="container">
+        <h1>Chat History</h1>
+        <div id="historyContent"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Incoming Request Popup -->
@@ -149,7 +228,7 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    let myId, pc, dc, callId, pendingCallId;
+    let myId, pc, dc, callId, pendingCallId, userData;
 
     // Check authentication state
     auth.onAuthStateChanged(async (user) => {
@@ -175,10 +254,52 @@
         return;
       }
 
+      userData = snapshot.val();
       console.log("User authenticated, ID:", myId);
       document.getElementById("myId").textContent = `Your ID: ${myId}`;
+      populateProfile();
+      loadChatHistory();
       listenForCalls();
     });
+
+    function populateProfile() {
+      document.getElementById("profileId").textContent = myId;
+      document.getElementById("profileEmail").textContent = userData.email;
+      document.getElementById("profileRealName").textContent = userData.realName;
+      document.getElementById("profileDisplayName").textContent = userData.displayName;
+      document.getElementById("profileCity").textContent = userData.city;
+      document.getElementById("profileCountry").textContent = userData.country;
+    }
+
+    function loadChatHistory() {
+      const historyContent = document.getElementById("historyContent");
+      historyContent.innerHTML = "";
+      db.ref(`users/${myId}/chatHistory`).once("value", (snapshot) => {
+        if (!snapshot.exists()) {
+          historyContent.innerHTML = "<p>No chat history available.</p>";
+          return;
+        }
+
+        snapshot.forEach((callSnapshot) => {
+          const callId = callSnapshot.key;
+          const messages = callSnapshot.val();
+          const friendId = callId.replace(myId, "").replace("_to_", "");
+          const p = document.createElement("p");
+          p.innerHTML = `<strong>Chat with ${friendId}</strong>`;
+          historyContent.appendChild(p);
+
+          for (const msgId in messages) {
+            const msg = messages[msgId];
+            const pMsg = document.createElement("p");
+            pMsg.textContent = `${msg.sender}: ${msg.text}`;
+            if (msg.sender === "You") {
+              pMsg.classList.add("you");
+            }
+            historyContent.appendChild(pMsg);
+          }
+        });
+      });
+    }
 
     function connect() {
       const friendId = document.getElementById("friendId").value;
@@ -197,39 +318,57 @@
 
     function initiateChat(friendId) {
       console.log("Initiating chat with friend ID:", friendId);
-      callId = `${myId}_to_${friendId}`;
-      pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-      dc = pc.createDataChannel("chat");
+      const ids = [myId, friendId].sort();
+      callId = `${ids[0]}_to_${ids[1]}`;
+      const isInitiator = myId === ids[0];
 
-      setupChat();
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
-        }
+      const callData = {
+        callerId: myId,
+        calleeId: friendId,
+        status: "pending",
+        timestamp: firebase.database.ServerValue.TIMESTAMP
       };
-      pc.createOffer()
-        .then((offer) => pc.setLocalDescription(offer))
-        .then(() => db.ref(`calls/${callId}/offer`).set(pc.localDescription))
-        .catch((error) => console.error("Error creating offer:", error));
-      
-      db.ref(`calls/${callId}/answer`).on("value", (snapshot) => {
-        if (snapshot.val()) {
-          pc.setRemoteDescription(snapshot.val())
-            .catch((error) => console.error("Error setting remote description:", error));
-        }
-      });
-      
-      db.ref(`calls/${callId}/iceCandidates/${friendId}`).on("child_added", (snapshot) => {
-        pc.addIceCandidate(snapshot.val())
-          .catch((error) => console.error("Error adding ICE candidate:", error));
-      });
+
+      db.ref(`users/${myId}/outgoingCalls/${callId}`).set(callData);
+      db.ref(`users/${friendId}/incomingCalls/${callId}`).set(callData);
+
+      if (isInitiator) {
+        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        dc = pc.createDataChannel("chat");
+
+        setupChat();
+        pc.onicecandidate = (e) => {
+          if (e.candidate) {
+            db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
+          }
+        };
+        pc.createOffer()
+          .then((offer) => pc.setLocalDescription(offer))
+          .then(() => db.ref(`calls/${callId}/offer`).set(pc.localDescription))
+          .catch((error) => console.error("Error creating offer:", error));
+
+        db.ref(`calls/${callId}/answer`).on("value", (snapshot) => {
+          if (snapshot.val()) {
+            pc.setRemoteDescription(snapshot.val())
+              .catch((error) => console.error("Error setting remote description:", error));
+          }
+        });
+
+        db.ref(`calls/${callId}/iceCandidates/${friendId}`).on("child_added", (snapshot) => {
+          pc.addIceCandidate(snapshot.val())
+            .catch((error) => console.error("Error adding ICE candidate:", error));
+        });
+      }
     }
 
     function listenForCalls() {
       console.log("Listening for calls for ID:", myId);
-      db.ref("calls").orderByKey().startAt(`${myId}_to`).on("child_added", async (snapshot) => {
+      db.ref(`users/${myId}/incomingCalls`).on("child_added", async (snapshot) => {
         pendingCallId = snapshot.key;
-        const callerId = pendingCallId.split("_to_")[0];
+        const callData = snapshot.val();
+        const callerId = callData.callerId;
+        if (callerId === myId) return;
+
         const callerSnapshot = await db.ref(`users/${callerId}`).once("value");
         const callerData = callerSnapshot.val();
         showRequestPopup(callerId, callerData.displayName);
@@ -248,37 +387,47 @@
     function acceptRequest() {
       console.log("Accepting chat request, callId:", pendingCallId);
       callId = pendingCallId;
-      pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-      pc.ondatachannel = (e) => {
-        dc = e.channel;
-        setupChat();
-      };
+      const ids = callId.split("_to_");
+      const isInitiator = myId === ids[0];
 
-      db.ref(`calls/${callId}/offer`).once("value", (offerSnap) => {
-        const offer = offerSnap.val();
-        pc.setRemoteDescription(offer)
-          .then(() => pc.createAnswer())
-          .then((answer) => pc.setLocalDescription(answer))
-          .then(() => db.ref(`calls/${callId}/answer`).set(pc.localDescription))
-          .catch((error) => console.error("Error accepting request:", error));
-      });
+      if (!isInitiator) {
+        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        pc.ondatachannel = (e) => {
+          dc = e.channel;
+          setupChat();
+        };
 
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
-        }
-      };
-      
-      db.ref(`calls/${callId}/iceCandidates/${callId.split("_to_")[0]}`).on("child_added", (snapshot) => {
-        pc.addIceCandidate(snapshot.val())
-          .catch((error) => console.error("Error adding ICE candidate:", error));
-      });
+        db.ref(`calls/${callId}/offer`).once("value", (offerSnap) => {
+          const offer = offerSnap.val();
+          pc.setRemoteDescription(offer)
+            .then(() => pc.createAnswer())
+            .then((answer) => pc.setLocalDescription(answer))
+            .then(() => db.ref(`calls/${callId}/answer`).set(pc.localDescription))
+            .catch((error) => console.error("Error accepting request:", error));
+        });
 
+        pc.onicecandidate = (e) => {
+          if (e.candidate) {
+            db.ref(`calls/${callId}/iceCandidates/${myId}`).push(e.candidate);
+          }
+        };
+
+        db.ref(`calls/${callId}/iceCandidates/${ids[0]}`).on("child_added", (snapshot) => {
+          pc.addIceCandidate(snapshot.val())
+            .catch((error) => console.error("Error adding ICE candidate:", error));
+        });
+      }
+
+      db.ref(`users/${myId}/incomingCalls/${callId}/status`).set("accepted");
+      db.ref(`users/${ids[0]}/outgoingCalls/${callId}/status`).set("accepted");
       hideRequestPopup();
     }
 
     function rejectRequest() {
       console.log("Rejecting chat request, callId:", pendingCallId);
+      const ids = pendingCallId.split("_to_");
+      db.ref(`users/${myId}/incomingCalls/${pendingCallId}`).remove();
+      db.ref(`users/${ids[0]}/outgoingCalls/${pendingCallId}`).remove();
       db.ref(`calls/${pendingCallId}`).remove();
       hideRequestPopup();
     }
@@ -297,6 +446,12 @@
       };
       dc.onmessage = (e) => {
         addMessage(`Friend: ${e.data}`);
+        // Save message to history
+        db.ref(`users/${myId}/chatHistory/${callId}`).push({
+          sender: "Friend",
+          text: e.data,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
       };
       db.ref(`calls/${callId}/typing`).on("value", (snapshot) => {
         document.getElementById("typing").textContent = snapshot.val() ? "Friend is typing..." : "";
@@ -310,6 +465,12 @@
       if (dc && dc.readyState === "open") {
         dc.send(msg);
         addMessage(`You: ${msg}`, true);
+        // Save message to history
+        db.ref(`users/${myId}/chatHistory/${callId}`).push({
+          sender: "You",
+          text: msg,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
         document.getElementById("message").value = "";
         db.ref(`calls/${callId}/typing`).set(false);
       } else {
@@ -334,6 +495,9 @@
         pc = null;
         document.getElementById("status").textContent = "Disconnected";
         document.getElementById("disconnectButton").style.display = "none";
+        const ids = callId.split("_to_");
+        db.ref(`users/${ids[0]}/outgoingCalls/${callId}`).remove();
+        db.ref(`users/${ids[1]}/incomingCalls/${callId}`).remove();
         db.ref(`calls/${callId}`).remove();
       }
     }
@@ -358,6 +522,23 @@
       });
     }
 
+    // Tab navigation
+    function showTab(tabId, linkId) {
+      document.querySelectorAll(".main-content > div").forEach((tab) => {
+        tab.classList.remove("active");
+      });
+      document.querySelectorAll(".sidebar a").forEach((link) => {
+        link.classList.remove("active");
+      });
+
+      document.getElementById(tabId).classList.add("active");
+      document.getElementById(linkId).classList.add("active");
+
+      if (tabId === "historyTab") {
+        loadChatHistory();
+      }
+    }
+
     // Add event listeners
     console.log("Adding event listeners...");
     document.getElementById("connectButton").addEventListener("click", connect);
@@ -366,7 +547,22 @@
     document.getElementById("message").addEventListener("input", updateTyping);
     document.getElementById("acceptButton").addEventListener("click", acceptRequest);
     document.getElementById("rejectButton").addEventListener("click", rejectRequest);
-    document.getElementById("logoutButton").addEventListener("click", logout);
+    document.getElementById("homeLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      showTab("homeTab", "homeLink");
+    });
+    document.getElementById("profileLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      showTab("profileTab", "profileLink");
+    });
+    document.getElementById("historyLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      showTab("historyTab", "historyLink");
+    });
+    document.getElementById("logoutLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      logout();
+    });
 
     console.log("Event listeners added successfully");
   </script>
