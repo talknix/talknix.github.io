@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>P2P Chat</title>
+  <title>Talknix P2P Chat</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -106,50 +106,45 @@
 </head>
 <body>
   <div class="container">
-    <h1>P2P Chat</h1>
+    <h1>Talknix P2P Chat</h1>
     <p id="myId">Loading your ID...</p>
     <input id="friendId" placeholder="Enter friend's 7-digit ID">
-    <button onclick="connect()">Connect</button>
-    <button onclick="disconnect()" id="disconnect" style="display:none;">Disconnect</button>
+    <button id="connectButton">Connect</button>
+    <button id="disconnectButton" style="display:none;">Disconnect</button>
     <div id="status"></div>
     <div id="typing"></div>
     <div id="chat"></div>
-    <input id="message" placeholder="Type a message" oninput="updateTyping()">
-    <button onclick="sendMessage()">Send</button>
+    <input id="message" placeholder="Type a message">
+    <button id="sendButton">Send</button>
   </div>
 
   <!-- Incoming Request Popup -->
   <div id="requestPopup">
     <p id="requestMessage"></p>
-    <button class="accept" onclick="acceptRequest()">Accept</button>
-    <button class="reject" onclick="rejectRequest()">Reject</button>
+    <button class="accept" id="acceptButton">Accept</button>
+    <button class="reject" id="rejectButton">Reject</button>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+  <!-- Firebase SDK (UMD Bundle) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
-  authDomain: "talknix-p2p.firebaseapp.com",
-  databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "talknix-p2p",
-  storageBucket: "talknix-p2p.firebasestorage.app",
-  messagingSenderId: "1091516076156",
-  appId: "1:1091516076156:web:09337436dcc867760279f9"
- };
+      apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
+      authDomain: "talknix-p2p.firebaseapp.com",
+      databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "talknix-p2p",
+      storageBucket: "talknix-p2p.firebasestorage.app",
+      messagingSenderId: "1091516076156",
+      appId: "1:1091516076156:web:09337436dcc867760279f9"
+    };
+
     // Initialize Firebase
-    let auth, db;
-    try {
-      firebase.initializeApp(firebaseConfig);
-      auth = firebase.auth();
-      db = firebase.database();
-    } catch (error) {
-      document.getElementById("status").textContent = "Firebase initialization failed: " + error.message;
-      return;
-    }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
     let myId, pc, dc, callId, pendingCallId;
 
@@ -267,7 +262,7 @@
     function setupChat() {
       dc.onopen = () => {
         document.getElementById("status").textContent = "Connected!";
-        document.getElementById("disconnect").style.display = "block";
+        document.getElementById("disconnectButton").style.display = "block";
       };
       dc.onmessage = (e) => addMessage(`Friend: ${e.data}`);
       db.ref(`calls/${callId}/typing`).on("value", (snapshot) => {
@@ -281,7 +276,7 @@
         dc.send(msg);
         addMessage(`You: ${msg}`, true);
         document.getElementById("message").value = "";
-        db.ref(`calls/${callId}/typing`).set(false);
+        db.ref(`calls/${callId}/typing").set(false);
       } else {
         alert("Not connected yet!");
       }
@@ -301,7 +296,7 @@
         dc = null;
         pc = null;
         document.getElementById("status").textContent = "Disconnected";
-        document.getElementById("disconnect").style.display = "none";
+        document.getElementById("disconnectButton").style.display = "none";
         db.ref(`calls/${callId}`).remove();
       }
     }
@@ -314,6 +309,14 @@
       chat.appendChild(p);
       chat.scrollTop = chat.scrollHeight;
     }
+
+    // Add event listeners
+    document.getElementById("connectButton").addEventListener("click", connect);
+    document.getElementById("disconnectButton").addEventListener("click", disconnect);
+    document.getElementById("sendButton").addEventListener("click", sendMessage);
+    document.getElementById("acceptButton").addEventListener("click", acceptRequest);
+    document.getElementById("rejectButton").addEventListener("click", rejectRequest);
+    document.getElementById("message").addEventListener("input", updateTyping);
   </script>
 </body>
 </html>
