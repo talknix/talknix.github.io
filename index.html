@@ -52,16 +52,29 @@
       color: #555;
       margin: 10px 0;
     }
+    #loginForm, #detailsForm {
+      display: block;
+    }
+    #detailsForm {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Register/Login for P2P Chat</h1>
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">Login / Register</button>
+    <div id="loginForm">
+      <input id="email" type="email" placeholder="Email">
+      <input id="password" type="password" placeholder="Password">
+      <button onclick="login()">Login / Register</button>
+    </div>
+    <div id="detailsForm">
+      <input id="realName" placeholder="Your Real Name (e.g., Alice Smith)">
+      <input id="displayName" placeholder="Display Name (e.g., Alice)">
+      <p id="userIdDisplay"></p>
+      <button onclick="saveDetails()">Save and Proceed</button>
+    </div>
     <p id="status"></p>
-    <button onclick="window.location.href='chat.html'" id="proceed" style="display:none;">Go to Chat</button>
   </div>
 
   <!-- Firebase SDK -->
@@ -70,6 +83,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
 
   <script>
+    // Firebase configuration
     const firebaseConfig = {
   apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
   authDomain: "talknix-p2p.firebaseapp.com",
@@ -77,20 +91,31 @@
   projectId: "talknix-p2p",
   storageBucket: "talknix-p2p.firebasestorage.app",
   messagingSenderId: "1091516076156",
-  appId: "1:1091516076156:web:09337436dcc867760279f9",
- 
-};
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
+  appId: "1:1091516076156:web:09337436dcc867760279f9"
+ };
+
+    // Initialize Firebase
+    let auth, db;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.database();
+    } catch (error) {
+      document.getElementById("status").textContent = "Firebase initialization failed: " + error.message;
+      return;
+    }
 
     function generate7DigitId() {
       return Math.floor(1000000 + Math.random() * 9000000);
     }
 
     async function getIpDetails() {
-      const response = await fetch("https://ipapi.co/json/");
-      return await response.json(); // Returns IP, city, country, etc.
+      try {
+        const response = await fetch("https://ipapi.co/json/");
+        return await response.json();
+      } catch (error) {
+        return { ip: "Unknown", city: "Unknown", country_name: "Unknown" };
+      }
     }
 
     async function login() {
@@ -106,12 +131,10 @@
       status.textContent = "Processing...";
 
       try {
-        // Try to log in
         let userCredential = await auth.signInWithEmailAndPassword(email, password);
         await handleUser(userCredential.user);
       } catch (error) {
         if (error.code === "auth/user-not-found") {
-          // If user doesn’t exist, register them
           try {
             userCredential = await auth.createUserWithEmailAndPassword(email, password);
             await handleUser(userCredential.user);
@@ -126,34 +149,58 @@
 
     async function handleUser(user) {
       let myId = localStorage.getItem("userId");
-      if (!myId) {
+      const snapshot = await db.ref(`users/${myId}`).once("value");
+
+      if (!myId || !snapshot.exists()) {
         let unique = false;
         while (!unique) {
           myId = generate7DigitId();
-          const snapshot = await db.ref(`users/${myId}`).once("value");
-          if (!snapshot.exists()) unique = true;
+          const idSnapshot = await db.ref(`users/${myId}`).once("value");
+          if (!idSnapshot.exists()) unique = true;
         }
-        const ipDetails = await getIpDetails();
-        await db.ref(`users/${myId}`).set({
-          email: user.email,
-          registered: true,
-          status: "online",
-          ip: ipDetails.ip,
-          city: ipDetails.city || "Unknown",
-          country: ipDetails.country_name || "Unknown",
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
         localStorage.setItem("userId", myId);
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("detailsForm").style.display = "block";
+        document.getElementById("userIdDisplay").textContent = `Your ID: ${myId}`;
+        document.getElementById("status").textContent = "Please enter your details.";
+      } else {
+        document.getElementById("status").textContent = `Welcome back! Redirecting...`;
+        setTimeout(() => window.location.href = "chat.html", 1000);
       }
-      document.getElementById("status").textContent = `Logged in! Your ID: ${myId}`;
-      document.getElementById("proceed").style.display = "block";
     }
 
-    // Redirect if already logged in
+    async function saveDetails() {
+      const realName = document.getElementById("realName").value;
+      const displayName = document.getElementById("displayName").value;
+      const myId = localStorage.getItem("userId");
+      const status = document.getElementById("status");
+
+      if (!realName || !displayName) {
+        status.textContent = "Please fill in all fields!";
+        return;
+      }
+
+      const ipDetails = await getIpDetails();
+      await db.ref(`users/${myId}`).set({
+        email: auth.currentUser.email,
+        realName: realName,
+        displayName: displayName,
+        registered: true,
+        status: "online",
+        ip: ipDetails.ip,
+        city: ipDetails.city || "Unknown",
+        country: ipDetails.country_name || "Unknown",
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      status.textContent = "Details saved! Redirecting...";
+      setTimeout(() => window.location.href = "chat.html", 1000);
+    }
+
+    // Wait for Firebase to initialize before setting up auth listener
     auth.onAuthStateChanged(user => {
       if (user && localStorage.getItem("userId")) {
-        document.getElementById("status").textContent = `Logged in! Your ID: ${localStorage.getItem("userId")}`;
-        document.getElementById("proceed").style.display = "block";
+        handleUser(user);
       }
     });
   </script>
