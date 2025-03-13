@@ -126,27 +126,30 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    function generate7DigitId() {
-      return Math.floor(1000000 + Math.random() * 9000000);
-    }
-
-    async function getIpDetails() {
-      try {
-        const response = await fetch("https://ipapi.co/json/");
-        return await response.json();
-      } catch (error) {
-        console.error("IP fetch failed:", error);
-        return { ip: "Unknown", city: "Unknown", country_name: "Unknown" };
-      }
-    }
-
-    async function checkEmailExists(email) {
-      const snapshot = await db.ref("users").orderByChild("email").equalTo(email).once("value");
-      return snapshot.exists();
-    }
-
     document.addEventListener("DOMContentLoaded", () => {
       console.log("DOM fully loaded, attaching event listeners...");
+
+      // Verify button exists
+      const registerButton = document.getElementById("registerButton");
+      if (!registerButton) {
+        console.error("Register button not found!");
+      } else {
+        console.log("Register button found:", registerButton);
+      }
+
+      function generate7DigitId() {
+        return Math.floor(1000000 + Math.random() * 9000000);
+      }
+
+      async function getIpDetails() {
+        try {
+          const response = await fetch("https://ipapi.co/json/");
+          return await response.json();
+        } catch (error) {
+          console.error("IP fetch failed:", error);
+          return { ip: "Unknown", city: "Unknown", country_name: "Unknown" };
+        }
+      }
 
       async function login() {
         const email = document.getElementById("loginEmail").value.trim();
@@ -207,6 +210,8 @@
         const emailInput = document.getElementById("registerEmail");
         const passwordInput = document.getElementById("registerPassword");
 
+        console.log("Register function called with email:", email);
+
         // Reset validation styles
         emailInput.classList.remove("invalid");
         passwordInput.classList.remove("invalid");
@@ -233,15 +238,6 @@
           return;
         }
 
-        // Check if email is already associated with a user ID
-        const emailExists = await checkEmailExists(email);
-        if (emailExists) {
-          status.textContent = "This email is already registered with an account!";
-          status.classList.add("error");
-          emailInput.classList.add("invalid");
-          return;
-        }
-
         status.textContent = "Registering...";
         console.log("Attempting registration with email:", email);
 
@@ -250,7 +246,12 @@
           console.log("Registration successful, user:", userCredential.user.email);
           await handleUser(userCredential.user);
         } catch (error) {
-          status.textContent = `Registration failed: ${error.message}`;
+          const errorMessage = error.message;
+          if (errorMessage.includes("email-already-in-use")) {
+            status.textContent = "This email is already registered with an account!";
+          } else {
+            status.textContent = `Registration failed: ${error.message}`;
+          }
           status.classList.add("error");
           console.error("Registration error:", error);
         }
@@ -337,7 +338,10 @@
 
       // Add event listeners
       document.getElementById("loginButton").addEventListener("click", login);
-      document.getElementById("registerButton").addEventListener("click", register);
+      document.getElementById("registerButton").addEventListener("click", () => {
+        console.log("Register button clicked!");
+        register();
+      });
       document.getElementById("saveButton").addEventListener("click", saveDetails);
       document.getElementById("showRegisterButton").addEventListener("click", showRegisterForm);
       document.getElementById("showRegisterLink").addEventListener("click", showRegisterForm);
