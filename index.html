@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register - P2P Chat</title>
+  <title>Register - Talknix P2P Chat</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -62,48 +62,42 @@
 </head>
 <body>
   <div class="container">
-    <h1>Register/Login for P2P Chat</h1>
+    <h1>Register/Login for Talknix P2P Chat</h1>
     <div id="loginForm">
       <input id="email" type="email" placeholder="Email">
       <input id="password" type="password" placeholder="Password">
-      <button onclick="login()">Login / Register</button>
+      <button id="loginButton">Login / Register</button>
     </div>
     <div id="detailsForm">
       <input id="realName" placeholder="Your Real Name (e.g., Alice Smith)">
       <input id="displayName" placeholder="Display Name (e.g., Alice)">
       <p id="userIdDisplay"></p>
-      <button onclick="saveDetails()">Save and Proceed</button>
+      <button id="saveButton">Save and Proceed</button>
     </div>
     <p id="status"></p>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+  <!-- Firebase SDK (UMD Bundle) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <script>
-    // Firebase configuration
+    // Your Firebase configuration
     const firebaseConfig = {
-  apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
-  authDomain: "talknix-p2p.firebaseapp.com",
-  databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "talknix-p2p",
-  storageBucket: "talknix-p2p.firebasestorage.app",
-  messagingSenderId: "1091516076156",
-  appId: "1:1091516076156:web:09337436dcc867760279f9"
- };
+      apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
+      authDomain: "talknix-p2p.firebaseapp.com",
+      databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "talknix-p2p",
+      storageBucket: "talknix-p2p.firebasestorage.app",
+      messagingSenderId: "1091516076156",
+      appId: "1:1091516076156:web:09337436dcc867760279f9"
+    };
 
     // Initialize Firebase
-    let auth, db;
-    try {
-      firebase.initializeApp(firebaseConfig);
-      auth = firebase.auth();
-      db = firebase.database();
-    } catch (error) {
-      document.getElementById("status").textContent = "Firebase initialization failed: " + error.message;
-      return;
-    }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
     function generate7DigitId() {
       return Math.floor(1000000 + Math.random() * 9000000);
@@ -197,7 +191,11 @@
       setTimeout(() => window.location.href = "chat.html", 1000);
     }
 
-    // Wait for Firebase to initialize before setting up auth listener
+    // Add event listeners
+    document.getElementById("loginButton").addEventListener("click", login);
+    document.getElementById("saveButton").addEventListener("click", saveDetails);
+
+    // Handle auth state changes
     auth.onAuthStateChanged(user => {
       if (user && localStorage.getItem("userId")) {
         handleUser(user);
