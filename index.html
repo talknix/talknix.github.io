@@ -30,6 +30,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid #e0e0e0;
         }
 
         .header-title {
@@ -60,17 +61,15 @@
             flex-wrap: wrap;
             flex-grow: 1;
             margin: 0 auto;
-            align-items: stretch; /* Ensure both sections stretch to the same height */
         }
 
         .left-section {
             width: 50%;
             position: relative;
             overflow: hidden;
-            background-color: #f4f7fa; /* Match the body background for consistency */
+            border-right: 1px solid #e0e0e0;
         }
 
-        /* Slideshow Styles */
         .slideshow-container {
             position: relative;
             width: 100%;
@@ -112,15 +111,18 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 15px; /* Reduced padding to balance the space */
+            padding: 30px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
 
         .form-container {
             width: 100%;
-            max-width: 400px; /* Increased max-width to reduce empty space on the sides */
+            max-width: 320px;
             text-align: center;
-            padding: 0 10px; /* Add slight padding to ensure content doesn't touch edges */
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #fff;
         }
 
         .website-title {
@@ -160,6 +162,7 @@
         input:focus {
             border-color: #1e90ff;
             outline: none;
+            box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.2);
         }
 
         input.invalid {
@@ -176,7 +179,8 @@
             font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
+            position: relative;
         }
 
         button:hover {
@@ -295,6 +299,7 @@
             font-size: 0.9rem;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
             margin-top: auto;
+            border-top: 1px solid #e0e0e0;
         }
 
         footer a {
@@ -307,7 +312,6 @@
             text-decoration: underline;
         }
 
-        /* New additions for improved version */
         .visually-hidden {
             position: absolute;
             width: 1px;
@@ -325,13 +329,14 @@
             background: #eee;
             margin: 8px 0;
             border-radius: 2px;
+            overflow: hidden;
         }
 
         .password-strength-bar {
             height: 100%;
             width: 0;
             border-radius: 2px;
-            transition: width 0.3s ease;
+            transition: width 0.3s ease, background-color 0.3s ease;
         }
 
         .error-message {
@@ -358,6 +363,7 @@
             align-items: center;
             justify-content: center;
             font-size: 0.8rem;
+            transition: all 0.3s ease;
         }
 
         .progress-step.active {
@@ -365,7 +371,137 @@
             color: white;
         }
 
-        /* Media Queries */
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        .password-requirements {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: left;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+
+        .password-requirements ul {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+
+        .password-requirements li {
+            margin-bottom: 3px;
+        }
+
+        .password-requirements li.valid {
+            color: #34c759;
+        }
+
+        .password-requirements li.valid::before {
+            content: "✓ ";
+        }
+
+        .password-requirements li.invalid {
+            color: #ff4444;
+        }
+
+        .password-requirements li.invalid::before {
+            content: "✗ ";
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            flex: 1;
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .button-container button.prev-step {
+            background-color: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .button-container button.prev-step:hover {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+
+        .phone-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .country-code-select {
+            flex: 0 0 100px;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: #fafafa;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+            font-size: 0.9rem;
+        }
+
+        .phone-number-input {
+            flex: 1;
+        }
+
+        .password-suggestion {
+            font-size: 0.8rem;
+            color: #666;
+            margin: 5px 0;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .password-suggestion:hover {
+            color: #1e90ff;
+            text-decoration: underline;
+        }
+
+        .remember-password {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .remember-password input {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        /* New Consent Checkbox Styles */
+        .consent-container {
+            margin: 15px 0;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        .consent-container a {
+            color: #1e90ff;
+            text-decoration: underline;
+        }
+
+        .consent-container input {
+            width: auto;
+            margin-right: 8px;
+        }
+
         @media (max-width: 768px) {
             .left-section, .right-section {
                 width: 100%;
@@ -373,14 +509,22 @@
 
             .left-section {
                 min-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
             }
 
             .form-container {
                 max-width: 100%;
+                border: none;
+                padding: 15px;
             }
 
             .website-title {
                 font-size: 2.4rem;
+            }
+
+            .country-code-select {
+                flex: 0 0 90px;
             }
         }
 
@@ -415,6 +559,11 @@
 
             .header-title {
                 font-size: 1.8rem;
+            }
+
+            .country-code-select {
+                flex: 0 0 80px;
+                padding: 10px;
             }
         }
     </style>
@@ -461,9 +610,6 @@
                         
                         <label for="login-password" class="visually-hidden">Password</label>
                         <input type="password" id="login-password" placeholder="Password" data-translate-placeholder="password" required>
-                        <div class="password-strength">
-                            <div class="password-strength-bar"></div>
-                        </div>
                         <div class="error-message" id="login-password-error"></div>
                         
                         <div class="options-container">
@@ -500,41 +646,81 @@
                             <input type="email" id="signup-email" placeholder="Email" data-translate-placeholder="email" required>
                             <div class="error-message" id="email-error"></div>
                             
-                            <button type="button" class="next-step">Next</button>
+                            <div class="button-container">
+                                <button type="button" class="next-step">Next</button>
+                            </div>
                         </div>
                         
                         <div class="form-step">
                             <label for="signup-password" class="visually-hidden">Password</label>
                             <input type="password" id="signup-password" placeholder="Password" data-translate-placeholder="password" required>
                             <div class="password-strength">
-                                <div class="password-strength-bar"></div>
+                                <div class="password-strength-bar" id="password-strength-bar"></div>
                             </div>
+                            <div class="password-requirements">
+                                <ul>
+                                    <li class="invalid" id="req-length">At least 8 characters</li>
+                                    <li class="invalid" id="req-uppercase">At least one uppercase letter</li>
+                                    <li class="invalid" id="req-number">At least one number</li>
+                                    <li class="invalid" id="req-special">At least one special character</li>
+                                </ul>
+                            </div>
+                            <div class="password-suggestion" id="password-suggestion">Suggest a strong password</div>
                             <div class="error-message" id="password-error"></div>
                             
                             <label for="confirm-password" class="visually-hidden">Confirm Password</label>
                             <input type="password" id="confirm-password" placeholder="Confirm Password" data-translate-placeholder="confirm_password" required>
                             <div class="error-message" id="confirm-password-error"></div>
                             
-                            <div class="options-container">
+                            <div class="remember-password">
+                                <input type="checkbox" id="remember-password">
+                                <label for="remember-password">Remember this password</label>
+                            </div>
+                            
+                            <div class="button-container">
                                 <button type="button" class="prev-step">Back</button>
                                 <button type="button" class="next-step">Next</button>
                             </div>
                         </div>
                         
                         <div class="form-step">
-                            <label for="phone" class="visually-hidden">Phone Number</label>
-                            <input type="tel" id="phone" placeholder="Phone Number" data-translate-placeholder="phone" required>
+                            <div class="phone-input-container">
+                                <select class="country-code-select" id="country-code">
+                                    <option value="" disabled selected>Code</option>
+                                    <option value="+91" data-icon="🇮🇳">India (+91)</option>
+                                    <option value="+1">USA (+1)</option>
+                                    <option value="+44">UK (+44)</option>
+                                    <option value="+81">Japan (+81)</option>
+                                    <option value="+86">China (+86)</option>
+                                    <option value="+971">UAE (+971)</option>
+                                    <option value="+966">Saudi Arabia (+966)</option>
+                                    <option value="+65">Singapore (+65)</option>
+                                    <option value="+60">Malaysia (+60)</option>
+                                    <option value="+92">Pakistan (+92)</option>
+                                    <option value="+880">Bangladesh (+880)</option>
+                                    <option value="+94">Sri Lanka (+94)</option>
+                                    <option value="+977">Nepal (+977)</option>
+                                    <option value="+975">Bhutan (+975)</option>
+                                    <option value="+93">Afghanistan (+93)</option>
+                                    <option value="+20">Egypt (+20)</option>
+                                    <option value="+27">South Africa (+27)</option>
+                                </select>
+                                <input type="tel" id="phone" class="phone-number-input" placeholder="Phone Number" data-translate-placeholder="phone" required>
+                            </div>
                             <div class="error-message" id="phone-error"></div>
                             
-                            <div class="options-container">
-                                <input type="checkbox" id="terms" required>
-                                <label for="terms" data-translate="accept_terms">I accept the terms and conditions</label>
+                            <div class="consent-container">
+                                <input type="checkbox" id="terms-privacy-consent" required>
+                                <label for="terms-privacy-consent">
+                                    I agree to the <a href="terms.html" target="_blank">Terms of Use</a> and 
+                                    <a href="privacy.html" target="_blank">Privacy Policy</a>
+                                </label>
                             </div>
-                            <div class="error-message" id="terms-error"></div>
+                            <div class="error-message" id="consent-error"></div>
                             
-                            <div class="options-container">
+                            <div class="button-container">
                                 <button type="button" class="prev-step">Back</button>
-                                <button type="submit" data-translate="sign_up">Sign Up</button>
+                                <button type="submit" id="create-account-btn">Create Account</button>
                             </div>
                         </div>
                     </form>
@@ -562,7 +748,7 @@
     </div>
 
     <footer>
-        <p>© 2025 Talknix | <a href="#">Privacy Policy</a> | <a href="#">Terms of Use</a> | <a href="#">Contact Us</a></p>
+        <p>© 2025 Talknix | <a href="privacy.html">Privacy Policy</a> | <a href="terms.html">Terms of Use</a> | <a href="#">Contact Us</a></p>
     </footer>
 
     <script>
@@ -619,127 +805,127 @@
 
         // Image data with captions in all languages
         const imageData = [
-    {
-        url: "https://source.unsplash.com/300x200/?technology",
-        captions: {
-            en: "Diwali Festival Lights",
-            hi: "दिवाली उत्सव की रोशनी",
-            kn: "ದೀಪಾವಳಿ ಹಬ್ಬದ ದೀಪಗಳು"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?cave",
-        captions: {
-            en: "Ancient Ajanta Caves",
-            hi: "प्राचीन अजंता गुफाएं",
-            kn: "ಪ್ರಾಚೀನ ಅಜಂತಾ ಗುಹೆಗಳು"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?ruins,historical",
-        captions: {
-            en: "Historic Hampi Ruins",
-            hi: "ऐतिहासिक हम्पी खंडहर",
-            kn: "ಐತಿಹಾಸಿಕ ಹಂಪಿ ಶಿಥಿಲಾವಶೇಷಗಳು"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?backwaters,kerala",
-        captions: {
-            en: "Serene Kerala Backwaters",
-            hi: "शांत केरल बैकवाटर्स",
-            kn: "ನಿಶ್ಯಬ್ದ ಕೇರಳ ಬ್ಯಾಕ್‌ವಾಟರ್ಸ್"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?river,ghats",
-        captions: {
-            en: "Sacred Varanasi Ghats",
-            hi: "पवित्र वाराणसी घाट",
-            kn: "ಪವಿತ್ರ ವಾರಾಣಸಿ ಘಾಟ್ಗಳು"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?temple,sculpture",
-        captions: {
-            en: "Khajuraho Temples Art",
-            hi: "खजुराहो मंदिर कला",
-            kn: "ಖಜುರಾಹೋ ದೇವಾಲಯ ಕಲೆ"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?beach,goa",
-        captions: {
-            en: "Sunny Goa Beaches",
-            hi: "सनी गोवा समुद्र तट",
-            kn: "ಬಿಸಿಲಿನ ಗೋವಾ ಬೀಚ್‌ಗಳು"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?goldentemple,amritsar",
-        captions: {
-            en: "Golden Temple Amritsar",
-            hi: "स्वर्ण मंदिर अमृतसर",
-            kn: "ಗೋಲ್ಡನ್ ಟೆಂಪಲ್ ಅಮೃತಸರ"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?mumbai,skyline",
-        captions: {
-            en: "Mumbai Skyline View",
-            hi: "मुंबई स्काईलाइन दृश्य",
-            kn: "ಮುಂಬೈ ಸ್ಕೈಲೈನ್ ನೋಟ"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?mountains,ladakh",
-        captions: {
-            en: "Majestic Ladakh Mountains",
-            hi: "महान लद्दाख पहाड़",
-            kn: "ಪ್ರಭಾವಶಾಲಿ ಲಡಾಖ್ ಪರ್ವತಗಳು"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?mysore,palace",
-        captions: {
-            en: "Mysore Palace Illuminated",
-            hi: "रोशन मैसूर पैलेस",
-            kn: "ಮೈಸೂರು ಅರಮನೆ ಪ್ರಕಾಶಿತ"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?desert,fort",
-        captions: {
-            en: "Jaisalmer Fort Desert",
-            hi: "जैसलमेर किला रेगिस्तान",
-            kn: "ಜೈಸಲ್ಮೇರ್ ಕೋಟೆ ಮರುಭೂಮಿ"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?valley,greenery",
-        captions: {
-            en: "Lush Cherrapunji Valleys",
-            hi: "हरे-भरे चेरापूंजी घाटी",
-            kn: "ಹಸಿರು ಚೆರಾಪುಂಜಿ ಕಣಿವೆಗಳು"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?temple,architecture",
-        captions: {
-            en: "Konark Sun Temple",
-            hi: "कोणार्क सूर्य मंदिर",
-            kn: "ಕೊನಾರ್ಕ್ ಸನ್ ಟೆಂಪಲ್"
-        }
-    },
-    {
-        url: "https://source.unsplash.com/300x200/?beach,paradise",
-        captions: {
-            en: "Andaman Islands Beach",
-            hi: "अंडमान द्वीप समुद्र तट",
-            kn: "ಅಂಡಮಾನ್ ದ್ವೀಪಗಳ ಬೀಚ್"
-        }
-    }
-];
+            {
+                url: "https://source.unsplash.com/300x200/?technology",
+                captions: {
+                    en: "Diwali Festival Lights",
+                    hi: "दिवाली उत्सव की रोशनी",
+                    kn: "ದೀಪಾವಳಿ ಹಬ್ಬದ ದೀಪಗಳು"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?cave",
+                captions: {
+                    en: "Ancient Ajanta Caves",
+                    hi: "प्राचीन अजंता गुफाएं",
+                    kn: "ಪ್ರಾಚೀನ ಅಜಂತಾ ಗುಹೆಗಳು"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?ruins,historical",
+                captions: {
+                    en: "Historic Hampi Ruins",
+                    hi: "ऐतिहासिक हम्पी खंडहर",
+                    kn: "ಐತಿಹಾಸಿಕ ಹಂಪಿ ಶಿಥಿಲಾವಶೇಷಗಳು"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?backwaters,kerala",
+                captions: {
+                    en: "Serene Kerala Backwaters",
+                    hi: "शांत केरल बैकवाटर्स",
+                    kn: "ನಿಶ್ಯಬ್ದ ಕೇರಳ ಬ್ಯಾಕ್‌ವಾಟರ್ಸ್"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?river,ghats",
+                captions: {
+                    en: "Sacred Varanasi Ghats",
+                    hi: "पवित्र वाराणसी घाट",
+                    kn: "ಪವಿತ್ರ ವಾರಾಣಸಿ ಘಾಟ್ಗಳು"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?temple,sculpture",
+                captions: {
+                    en: "Khajuraho Temples Art",
+                    hi: "खजुराहो मंदिर कला",
+                    kn: "ಖಜುರಾಹೋ ದೇವಾಲಯ ಕಲೆ"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?beach,goa",
+                captions: {
+                    en: "Sunny Goa Beaches",
+                    hi: "सनी गोवा समुद्र तट",
+                    kn: "ಬಿಸಿಲಿನ ಗೋವಾ ಬೀಚ್‌ಗಳು"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?goldentemple,amritsar",
+                captions: {
+                    en: "Golden Temple Amritsar",
+                    hi: "स्वर्ण मंदिर अमृतसर",
+                    kn: "ಗೋಲ್ಡನ್ ಟೆಂಪಲ್ ಅಮೃತಸರ"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?mumbai,skyline",
+                captions: {
+                    en: "Mumbai Skyline View",
+                    hi: "मुंबई स्काईलाइन दृश्य",
+                    kn: "ಮುಂಬೈ ಸ್ಕೈಲೈನ್ ನೋಟ"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?mountains,ladakh",
+                captions: {
+                    en: "Majestic Ladakh Mountains",
+                    hi: "महान लद्दाख पहाड़",
+                    kn: "ಪ್ರಭಾವಶಾಲಿ ಲಡಾಖ್ ಪರ್ವತಗಳು"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?mysore,palace",
+                captions: {
+                    en: "Mysore Palace Illuminated",
+                    hi: "रोशन मैसूर पैलेस",
+                    kn: "ಮೈಸೂರು ಅರಮನೆ ಪ್ರಕಾಶಿತ"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?desert,fort",
+                captions: {
+                    en: "Jaisalmer Fort Desert",
+                    hi: "जैसलमेर किला रेगिस्तान",
+                    kn: "ಜೈಸಲ್ಮೇರ್ ಕೋಟೆ ಮರುಭೂಮಿ"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?valley,greenery",
+                captions: {
+                    en: "Lush Cherrapunji Valleys",
+                    hi: "हरे-भरे चेरापूंजी घाटी",
+                    kn: "ಹಸಿರು ಚೆರಾಪುಂಜಿ ಕಣಿವೆಗಳು"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?temple,architecture",
+                captions: {
+                    en: "Konark Sun Temple",
+                    hi: "कोणार्क सूर्य मंदिर",
+                    kn: "ಕೊನಾರ್ಕ್ ಸನ್ ಟೆಂಪಲ್"
+                }
+            },
+            {
+                url: "https://source.unsplash.com/300x200/?beach,paradise",
+                captions: {
+                    en: "Andaman Islands Beach",
+                    hi: "अंडमान द्वीप समुद्र तट",
+                    kn: "ಅಂಡಮಾನ್ ದ್ವೀಪಗಳ ಬೀಚ್"
+                }
+            }
+        ];
 
         // DOM Elements
         const loginForm = document.querySelector('.login-form');
@@ -833,13 +1019,28 @@
                 checkPasswordStrength(e.target.value);
             });
 
+            // Password suggestion
+            document.getElementById('password-suggestion').addEventListener('click', (e) => {
+                e.preventDefault();
+                const suggestedPassword = generatePassword();
+                document.getElementById('signup-password').value = suggestedPassword;
+                document.getElementById('confirm-password').value = suggestedPassword;
+                checkPasswordStrength(suggestedPassword);
+            });
+
             // Step navigation
             document.querySelectorAll('.next-step').forEach(btn => {
-                btn.addEventListener('click', nextStep);
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    nextStep();
+                });
             });
 
             document.querySelectorAll('.prev-step').forEach(btn => {
-                btn.addEventListener('click', prevStep);
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    prevStep();
+                });
             });
 
             // Form submissions
@@ -851,6 +1052,15 @@
             document.querySelectorAll('.google-btn').forEach(btn => {
                 btn.addEventListener('click', handleGoogleLogin);
             });
+        }
+
+        function generatePassword() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+            let password = "";
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
         }
 
         function showForm(formType) {
@@ -866,6 +1076,8 @@
                 signupForm.style.display = 'block';
                 currentStep = 1;
                 updateProgressSteps();
+                // Reset password strength indicators
+                checkPasswordStrength('');
             } else if (formType === 'forgot') {
                 forgotPasswordForm.style.display = 'block';
             }
@@ -904,31 +1116,56 @@
         }
 
         function checkPasswordStrength(password) {
-            const strengthBar = document.querySelector('.password-strength-bar');
+            const strengthBar = document.getElementById('password-strength-bar');
             let strength = 0;
+            let hasLength = password.length >= 8;
+            let hasUppercase = /[A-Z]/.test(password);
+            let hasNumber = /[0-9]/.test(password);
+            let hasSpecial = /[^A-Za-z0-9]/.test(password);
             
-            if (password.length >= 8) strength++;
-            if (password.match(/[A-Z]/)) strength++;
-            if (password.match(/[0-9]/)) strength++;
-            if (password.match(/[^A-Za-z0-9]/)) strength++;
+            // Update requirement indicators
+            document.getElementById('req-length').className = hasLength ? 'valid' : 'invalid';
+            document.getElementById('req-uppercase').className = hasUppercase ? 'valid' : 'invalid';
+            document.getElementById('req-number').className = hasNumber ? 'valid' : 'invalid';
+            document.getElementById('req-special').className = hasSpecial ? 'valid' : 'invalid';
             
+            // Calculate strength
+            if (hasLength) strength++;
+            if (hasUppercase) strength++;
+            if (hasNumber) strength++;
+            if (hasSpecial) strength++;
+            
+            // Update strength bar
             const width = (strength / 4) * 100;
             strengthBar.style.width = `${width}%`;
-            strengthBar.style.backgroundColor = 
-                strength < 2 ? '#ff4444' : 
-                strength < 4 ? '#ffc107' : '#34c759';
+            
+            // Change color based on strength
+            if (strength <= 1) {
+                strengthBar.style.backgroundColor = '#ff4444'; // Weak (red)
+            } else if (strength <= 2) {
+                strengthBar.style.backgroundColor = '#ffc107'; // Medium (yellow)
+            } else if (strength <= 3) {
+                strengthBar.style.backgroundColor = '#4CAF50'; // Strong (green)
+            } else {
+                strengthBar.style.backgroundColor = '#34c759'; // Very strong (bright green)
+            }
         }
 
         function updateProgressSteps() {
-            document.querySelectorAll('.progress-step').forEach((step, index) => {
-                step.classList.toggle('active', index < currentStep);
+            const steps = document.querySelectorAll('.progress-step');
+            steps.forEach((step, index) => {
+                if (index < currentStep) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
             });
             
             document.querySelectorAll('.form-step').forEach(step => {
-                step.style.display = 'none';
+                step.classList.remove('active');
             });
             
-            document.querySelector(`.form-step:nth-child(${currentStep + 1})`).style.display = 'block';
+            document.querySelector(`.form-step:nth-child(${currentStep})`).classList.add('active');
         }
 
         function nextStep() {
@@ -949,6 +1186,7 @@
 
         function validateCurrentStep() {
             let isValid = true;
+            clearErrors();
             
             // Validate step 1
             if (currentStep === 1) {
@@ -976,6 +1214,21 @@
                     isValid = false;
                 }
                 
+                if (!/[A-Z]/.test(passwordInput.value)) {
+                    showError(passwordInput, 'Password must contain at least one uppercase letter');
+                    isValid = false;
+                }
+                
+                if (!/[0-9]/.test(passwordInput.value)) {
+                    showError(passwordInput, 'Password must contain at least one number');
+                    isValid = false;
+                }
+                
+                if (!/[^A-Za-z0-9]/.test(passwordInput.value)) {
+                    showError(passwordInput, 'Password must contain at least one special character');
+                    isValid = false;
+                }
+                
                 if (passwordInput.value !== confirmInput.value) {
                     showError(confirmInput, 'Passwords do not match');
                     isValid = false;
@@ -984,16 +1237,25 @@
             
             // Validate step 3
             if (currentStep === 3) {
+                const countryCode = document.getElementById('country-code');
                 const phoneInput = document.getElementById('phone');
-                const termsCheckbox = document.getElementById('terms');
+                const consentCheckbox = document.getElementById('terms-privacy-consent');
+                
+                if (!countryCode.value) {
+                    showError(countryCode, 'Please select country code');
+                    isValid = false;
+                }
                 
                 if (!phoneInput.value.trim()) {
                     showError(phoneInput, 'Please enter your phone number');
                     isValid = false;
+                } else if (!/^\d{7,15}$/.test(phoneInput.value)) {
+                    showError(phoneInput, 'Please enter a valid phone number (7-15 digits)');
+                    isValid = false;
                 }
                 
-                if (!termsCheckbox.checked) {
-                    showError(termsCheckbox, 'You must accept the terms and conditions');
+                if (!consentCheckbox.checked) {
+                    showError(consentCheckbox, 'You must accept the Terms and Privacy Policy');
                     isValid = false;
                 }
             }
@@ -1002,7 +1264,18 @@
         }
 
         function showError(input, message) {
-            const errorElement = input.nextElementSibling;
+            let errorElement;
+            
+            // Special case for checkbox
+            if (input.type === 'checkbox') {
+                errorElement = input.nextElementSibling.nextElementSibling;
+            } else {
+                errorElement = input.nextElementSibling;
+                while (errorElement && !errorElement.classList.contains('error-message')) {
+                    errorElement = errorElement.nextElementSibling;
+                }
+            }
+            
             if (errorElement && errorElement.classList.contains('error-message')) {
                 errorElement.textContent = message;
                 errorElement.style.display = 'block';
@@ -1061,10 +1334,12 @@
                 const btn = e.target.querySelector('button[type="submit"]');
                 btn.classList.add('loading');
                 btn.disabled = true;
+                btn.innerHTML = ''; // Clear the text
                 
                 setTimeout(() => {
                     btn.classList.remove('loading');
                     btn.disabled = false;
+                    btn.textContent = 'Create Account';
                     alert('Account created successfully! (This is a demo)');
                     showForm('login');
                 }, 2000);
