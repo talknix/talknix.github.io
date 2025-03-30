@@ -60,12 +60,14 @@
             flex-wrap: wrap;
             flex-grow: 1;
             margin: 0 auto;
+            align-items: stretch; /* Ensure both sections stretch to the same height */
         }
 
         .left-section {
             width: 50%;
             position: relative;
             overflow: hidden;
+            background-color: #f4f7fa; /* Match the body background for consistency */
         }
 
         /* Slideshow Styles */
@@ -110,14 +112,15 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 30px;
+            padding: 15px; /* Reduced padding to balance the space */
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
 
         .form-container {
             width: 100%;
-            max-width: 320px;
+            max-width: 400px; /* Increased max-width to reduce empty space on the sides */
             text-align: center;
+            padding: 0 10px; /* Add slight padding to ensure content doesn't touch edges */
         }
 
         .website-title {
