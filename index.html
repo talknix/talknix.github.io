@@ -1,362 +1,1103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
-  <title>Register/Login - Talknix P2P Chat</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 0;
-    }
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      text-align: center;
-      max-width: 400px;
-      width: 100%;
-    }
-    h1 {
-      color: #2a5298;
-      margin-bottom: 20px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      box-sizing: border-box;
-    }
-    input.invalid {
-      border-color: #dc3545;
-    }
-    button {
-      background: #2a5298;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s;
-      width: 48%;
-      margin: 5px 1%;
-    }
-    button:hover {
-      background: #1e3c72;
-    }
-    #status {
-      color: #555;
-      margin: 10px 0;
-    }
-    #status.error {
-      color: #dc3545;
-    }
-    #loginForm, #registerForm, #detailsForm {
-      display: block;
-    }
-    #detailsForm {
-      display: none;
-    }
-    .form-toggle {
-      color: #2a5298;
-      cursor: pointer;
-      text-decoration: underline;
-      margin-top: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talknix - Login & Signup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Noto+Sans+Devanagari:wght@700&family=Noto+Sans+Kannada:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Billabong&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background-color: #f4f7fa;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2rem;
+            color: #1e90ff;
+        }
+
+        .language-selector select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 1rem;
+            background-color: #fff;
+            cursor: pointer;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            flex-wrap: wrap;
+            flex-grow: 1;
+            margin: 0 auto;
+        }
+
+        .left-section {
+            width: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Slideshow Styles */
+        .slideshow-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide-caption {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            max-width: 80%;
+            text-align: center;
+        }
+
+        .right-section {
+            width: 50%;
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .website-title {
+            font-family: 'Billabong', cursive;
+            font-size: 3rem;
+            color: #1e90ff;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        .website-title.hi {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+        }
+
+        .website-title.kn {
+            font-family: 'Noto Sans Kannada', sans-serif;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: #fafafa;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #1e90ff;
+            outline: none;
+        }
+
+        input.invalid {
+            border-color: #ff4444;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1e90ff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #187bcd;
+        }
+
+        button.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid #fff;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        p {
+            margin-top: 15px;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        a {
+            color: #1e90ff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .google-btn {
+            width: 100%;
+            padding: 12px 24px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            color: #757575;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: box-shadow 0.3s;
+        }
+
+        .google-btn i {
+            margin-right: 10px;
+            color: #4285f4;
+        }
+
+        .google-btn:hover {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .options-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .options-container input {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        .options-container label {
+            color: #555;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 5px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 100%;
+            background-color: #1e90ff;
+            border-radius: 3px;
+        }
+
+        .forgot-password-form {
+            display: none;
+        }
+
+        .forgot-password-form p {
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        footer {
+            width: 100%;
+            padding: 20px;
+            background-color: #fff;
+            text-align: center;
+            color: #777;
+            font-size: 0.9rem;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            margin-top: auto;
+        }
+
+        footer a {
+            color: #1e90ff;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* New additions for improved version */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .password-strength {
+            width: 100%;
+            height: 4px;
+            background: #eee;
+            margin: 8px 0;
+            border-radius: 2px;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .error-message {
+            color: #ff4444;
+            font-size: 0.8rem;
+            margin-top: -5px;
+            margin-bottom: 10px;
+            text-align: left;
+            display: none;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .progress-step {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .progress-step.active {
+            background: #1e90ff;
+            color: white;
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .left-section, .right-section {
+                width: 100%;
+            }
+
+            .left-section {
+                min-height: 40vh;
+            }
+
+            .form-container {
+                max-width: 100%;
+            }
+
+            .website-title {
+                font-size: 2.4rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .left-section, .right-section {
+                width: 100%;
+            }
+
+            .left-section {
+                min-height: 35vh;
+            }
+
+            .right-section {
+                padding: 20px;
+            }
+
+            .website-title {
+                font-size: 2.2rem;
+            }
+
+            h2 {
+                font-size: 1.3rem;
+            }
+
+            input, button, select {
+                font-size: 0.9rem;
+            }
+
+            header {
+                padding: 15px;
+            }
+
+            .header-title {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Register/Login for Talknix P2P Chat</h1>
-    <!-- Login Form -->
-    <div id="loginForm">
-      <input id="loginEmail" type="email" placeholder="Email">
-      <input id="loginPassword" type="password" placeholder="Password">
-      <button id="loginButton">Login</button>
-      <button id="showRegisterButton">Register</button>
-      <p class="form-toggle" id="showRegisterLink">Don't have an account? Register here.</p>
+    <header role="banner">
+         <div class="header-title" style="font-family: 'Billabong', cursive;">Talknix</div>
+        <div class="language-selector">
+            <label for="language" class="visually-hidden">Select Language</label>
+            <select id="language" aria-label="Select language">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="kn">Kannada</option>
+                <option value="bn">Bengali</option>
+                <option value="te">Telugu</option>
+                <option value="mr">Marathi</option>
+                <option value="ta">Tamil</option>
+                <option value="gu">Gujarati</option>
+                <option value="ml">Malayalam</option>
+                <option value="pa">Punjabi</option>
+                <option value="or">Odia</option>
+                <option value="as">Assamese</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="left-section">
+            <div class="slideshow-container" id="slideshow">
+                <!-- Slides will be inserted by JavaScript -->
+            </div>
+        </div>
+        <div class="right-section">
+            <div class="form-container">
+                <div class="website-title" id="website-title">Talknix</div>
+                
+                <!-- Login Form -->
+                <div class="login-form">
+                    <h2 data-translate="login">Login</h2>
+                    <form id="login-form">
+                        <label for="login-email" class="visually-hidden">Email</label>
+                        <input type="email" id="login-email" placeholder="Email" data-translate-placeholder="email" required>
+                        <div class="error-message" id="login-email-error"></div>
+                        
+                        <label for="login-password" class="visually-hidden">Password</label>
+                        <input type="password" id="login-password" placeholder="Password" data-translate-placeholder="password" required>
+                        <div class="password-strength">
+                            <div class="password-strength-bar"></div>
+                        </div>
+                        <div class="error-message" id="login-password-error"></div>
+                        
+                        <div class="options-container">
+                            <div>
+                                <input type="checkbox" id="remember-me">
+                                <label for="remember-me" data-translate="remember_me">Remember Me</label>
+                            </div>
+                            <a href="#" id="forgot-password" data-translate="forgot_password">Forgot Password?</a>
+                        </div>
+                        <button type="submit" data-translate="login">Login</button>
+                    </form>
+                    <p><a href="#" id="join-us-link" data-translate="join_us">Join us for free!</a></p>
+                    <button class="google-btn">
+                        <i class="fab fa-google"></i>
+                        <span data-translate="google_signin">Sign in with Google</span>
+                    </button>
+                </div>
+
+                <!-- Signup Form -->
+                <div class="signup-form" style="display: none;">
+                    <h2 data-translate="sign_up">Sign Up</h2>
+                    <div class="progress-steps">
+                        <div class="progress-step active">1</div>
+                        <div class="progress-step">2</div>
+                        <div class="progress-step">3</div>
+                    </div>
+                    <form id="signup-form">
+                        <div class="form-step active">
+                            <label for="full-name" class="visually-hidden">Full Name</label>
+                            <input type="text" id="full-name" placeholder="Full Name" data-translate-placeholder="full_name" required>
+                            <div class="error-message" id="name-error"></div>
+                            
+                            <label for="signup-email" class="visually-hidden">Email</label>
+                            <input type="email" id="signup-email" placeholder="Email" data-translate-placeholder="email" required>
+                            <div class="error-message" id="email-error"></div>
+                            
+                            <button type="button" class="next-step">Next</button>
+                        </div>
+                        
+                        <div class="form-step">
+                            <label for="signup-password" class="visually-hidden">Password</label>
+                            <input type="password" id="signup-password" placeholder="Password" data-translate-placeholder="password" required>
+                            <div class="password-strength">
+                                <div class="password-strength-bar"></div>
+                            </div>
+                            <div class="error-message" id="password-error"></div>
+                            
+                            <label for="confirm-password" class="visually-hidden">Confirm Password</label>
+                            <input type="password" id="confirm-password" placeholder="Confirm Password" data-translate-placeholder="confirm_password" required>
+                            <div class="error-message" id="confirm-password-error"></div>
+                            
+                            <div class="options-container">
+                                <button type="button" class="prev-step">Back</button>
+                                <button type="button" class="next-step">Next</button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-step">
+                            <label for="phone" class="visually-hidden">Phone Number</label>
+                            <input type="tel" id="phone" placeholder="Phone Number" data-translate-placeholder="phone" required>
+                            <div class="error-message" id="phone-error"></div>
+                            
+                            <div class="options-container">
+                                <input type="checkbox" id="terms" required>
+                                <label for="terms" data-translate="accept_terms">I accept the terms and conditions</label>
+                            </div>
+                            <div class="error-message" id="terms-error"></div>
+                            
+                            <div class="options-container">
+                                <button type="button" class="prev-step">Back</button>
+                                <button type="submit" data-translate="sign_up">Sign Up</button>
+                            </div>
+                        </div>
+                    </form>
+                    <p><a href="#" id="login-link" data-translate="already_account">Already have an account?</a></p>
+                    <button class="google-btn">
+                        <i class="fab fa-google"></i>
+                        <span data-translate="google_signin">Sign in with Google</span>
+                    </button>
+                </div>
+
+                <!-- Forgot Password Form -->
+                <div class="forgot-password-form" style="display: none;">
+                    <h2 data-translate="forgot_password">Forgot Password?</h2>
+                    <p>Please enter your email to reset your password.</p>
+                    <form id="forgot-password-form">
+                        <label for="reset-email" class="visually-hidden">Email</label>
+                        <input type="email" id="reset-email" placeholder="Email" data-translate-placeholder="email" required>
+                        <div class="error-message" id="reset-email-error"></div>
+                        <button type="submit">Submit</button>
+                    </form>
+                    <p><a href="#" id="back-to-login" data-translate="login">Back to Login</a></p>
+                </div>
+            </div>
+        </div>
     </div>
-    <!-- Register Form -->
-    <div id="registerForm" style="display: none;">
-      <input id="registerEmail" type="email" placeholder="Email">
-      <input id="registerPassword" type="password" placeholder="Password">
-      <button id="registerButton">Register</button>
-      <button id="showLoginButton">Login</button>
-      <p class="form-toggle" id="showLoginLink">Already have an account? Login here.</p>
-    </div>
-    <!-- Details Form -->
-    <div id="detailsForm">
-      <input id="realName" placeholder="Your Real Name (e.g., Alice Smith)">
-      <input id="displayName" placeholder="Display Name (e.g., Alice)">
-      <p id="userIdDisplay"></p>
-      <button id="saveButton">Save and Proceed</button>
-    </div>
-    <p id="status"></p>
-  </div>
 
-  <!-- Firebase SDK (UMD Bundle) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <footer>
+        <p>© 2025 Talknix | <a href="#">Privacy Policy</a> | <a href="#">Terms of Use</a> | <a href="#">Contact Us</a></p>
+    </footer>
 
-  <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCiN7DLtxTHncqYGy0hGCFao9TCAu2Z4mo",
-      authDomain: "talknix-p2p.firebaseapp.com",
-      databaseURL: "https://talknix-p2p-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "talknix-p2p",
-      storageBucket: "talknix-p2p.firebasestorage.app",
-      messagingSenderId: "1091516076156",
-      appId: "1:1091516076156:web:09337436dcc867760279f9"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    console.log("Firebase initialized:", firebase.app().name);
-    const auth = firebase.auth();
-    const db = firebase.database();
-
-    document.addEventListener("DOMContentLoaded", () => {
-      console.log("DOM fully loaded, attaching event listeners...");
-
-      // Verify button exists
-      const registerButton = document.getElementById("registerButton");
-      if (!registerButton) {
-        console.error("Register button not found!");
-      } else {
-        console.log("Register button found:", registerButton);
-      }
-
-      function generate7DigitId() {
-        return Math.floor(1000000 + Math.random() * 9000000);
-      }
-
-      async function getIpDetails() {
-        try {
-          const response = await fetch("https://ipapi.co/json/");
-          return await response.json();
-        } catch (error) {
-          console.error("IP fetch failed:", error);
-          return { ip: "Unknown", city: "Unknown", country_name: "Unknown" };
-        }
-      }
-
-      async function login() {
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value.trim();
-        const status = document.getElementById("status");
-        const emailInput = document.getElementById("loginEmail");
-        const passwordInput = document.getElementById("loginPassword");
-
-        // Reset validation styles
-        emailInput.classList.remove("invalid");
-        passwordInput.classList.remove("invalid");
-        status.classList.remove("error");
-
-        if (!email) {
-          status.textContent = "Please enter your email!";
-          status.classList.add("error");
-          emailInput.classList.add("invalid");
-          return;
-        }
-
-        if (!password) {
-          status.textContent = "Please enter your password!";
-          status.classList.add("error");
-          passwordInput.classList.add("invalid");
-          return;
-        }
-
-        if (password.length < 6) {
-          status.textContent = "Password must be at least 6 characters!";
-          status.classList.add("error");
-          passwordInput.classList.add("invalid");
-          return;
-        }
-
-        status.textContent = "Logging in...";
-        console.log("Attempting login with email:", email);
-
-        try {
-          let userCredential = await auth.signInWithEmailAndPassword(email, password);
-          console.log("Login successful, user:", userCredential.user.email);
-          await handleUser(userCredential.user);
-        } catch (error) {
-          const errorMessage = error.message;
-          if (errorMessage.includes("There is no user record")) {
-            status.textContent = "Email not registered yet. Please register first!";
-          } else {
-            status.textContent = `Login failed: ${error.message}`;
-          }
-          status.classList.add("error");
-          console.error("Login error:", error);
-        }
-      }
-
-      async function register() {
-        const email = document.getElementById("registerEmail").value.trim();
-        const password = document.getElementById("registerPassword").value.trim();
-        const status = document.getElementById("status");
-        const emailInput = document.getElementById("registerEmail");
-        const passwordInput = document.getElementById("registerPassword");
-
-        console.log("Register function called with email:", email);
-
-        // Reset validation styles
-        emailInput.classList.remove("invalid");
-        passwordInput.classList.remove("invalid");
-        status.classList.remove("error");
-
-        if (!email) {
-          status.textContent = "Please enter your email!";
-          status.classList.add("error");
-          emailInput.classList.add("invalid");
-          return;
-        }
-
-        if (!password) {
-          status.textContent = "Please enter your password!";
-          status.classList.add("error");
-          passwordInput.classList.add("invalid");
-          return;
-        }
-
-        if (password.length < 6) {
-          status.textContent = "Password must be at least 6 characters!";
-          status.classList.add("error");
-          passwordInput.classList.add("invalid");
-          return;
-        }
-
-        status.textContent = "Registering...";
-        console.log("Attempting registration with email:", email);
-
-        try {
-          let userCredential = await auth.createUserWithEmailAndPassword(email, password);
-          console.log("Registration successful, user:", userCredential.user.email);
-          await handleUser(userCredential.user);
-        } catch (error) {
-          const errorMessage = error.message;
-          if (errorMessage.includes("email-already-in-use")) {
-            status.textContent = "This email is already registered with an account!";
-          } else {
-            status.textContent = `Registration failed: ${error.message}`;
-          }
-          status.classList.add("error");
-          console.error("Registration error:", error);
-        }
-      }
-
-      async function handleUser(user) {
-        let myId = localStorage.getItem("userId");
-        const snapshot = await db.ref(`users/${myId}`).once("value");
-
-        if (!myId || !snapshot.exists()) {
-          let unique = false;
-          while (!unique) {
-            myId = generate7DigitId();
-            const idSnapshot = await db.ref(`users/${myId}`).once("value");
-            if (!idSnapshot.exists()) {
-              unique = true;
+    <script>
+        const translations = {
+            en: {
+                login: "Login",
+                sign_up: "Sign Up",
+                email: "Email",
+                password: "Password",
+                confirm_password: "Confirm Password",
+                full_name: "Full Name",
+                phone: "Phone Number",
+                remember_me: "Remember Me",
+                join_us: "Join us for free!",
+                forgot_password: "Forgot Password?",
+                already_account: "Already have an account?",
+                website_title: "Talknix",
+                google_signin: "Sign in with Google",
+                accept_terms: "I accept the terms and conditions"
+            },
+            hi: {
+                login: "लॉगिन",
+                sign_up: "साइन अप",
+                email: "ईमेल",
+                password: "पासवर्ड",
+                confirm_password: "पासवर्ड की पुष्टि करें",
+                full_name: "पूरा नाम",
+                phone: "फोन नंबर",
+                remember_me: "मुझे याद रखें",
+                join_us: "हमारे साथ मुफ्त में शामिल हों!",
+                forgot_password: "पासवर्ड भूल गए?",
+                already_account: "पहले से खाता है?",
+                website_title: "टॉक्सनिक्स",
+                google_signin: "Google से साइन इन करें",
+                accept_terms: "मैं नियम और शर्तें स्वीकार करता हूँ"
+            },
+            kn: {
+                login: "ಲಾಗಿನ್",
+                sign_up: "ಸೈನ್ ಅಪ್",
+                email: "ಇಮೇಲ್",
+                password: "ಪಾಸ್‌ವರ್ಡ್",
+                confirm_password: "ಪಾಸ್ವರ್ಡ್ ದೃಢೀಕರಿಸಿ",
+                full_name: "ಪೂರ್ಣ ಹೆಸರು",
+                phone: "ಫೋನ್ ಸಂಖ್ಯೆ",
+                remember_me: "ನನ್ನನ್ನು ನೆನಪಿನಲ್ಲಿ ಇಡಿ",
+                join_us: "ಉಚಿತವಾಗಿ ನಮ್ಮೊಂದಿಗೆ ಸೇರಿ!",
+                forgot_password: "ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರುವಿರಾ?",
+                already_account: "ಈಗಾಗಲೇ ಖಾತೆ ಇದೆಯೇ?",
+                website_title: "ಟಾಕ್ನಿಕ್ಸ್",
+                google_signin: "Google ನೊಂದಿಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ",
+                accept_terms: "ನಾನು ನಿಯಮಗಳು ಮತ್ತು ಷರತ್ತುಗಳನ್ನು ಒಪ್ಪುತ್ತೇನೆ"
             }
-          }
-          localStorage.setItem("userId", myId);
-          document.getElementById("loginForm").style.display = "none";
-          document.getElementById("registerForm").style.display = "none";
-          document.getElementById("detailsForm").style.display = "block";
-          document.getElementById("userIdDisplay").textContent = `Your ID: ${myId}`;
-          document.getElementById("status").textContent = "Please enter your details.";
-        } else {
-          document.getElementById("status").textContent = `Welcome back! Redirecting...`;
-          setTimeout(() => window.location.href = "chat.html", 1000);
+        };
+
+        // Image data with captions in all languages
+        const imageData = [
+    {
+        url: "https://source.unsplash.com/300x200/?technology",
+        captions: {
+            en: "Diwali Festival Lights",
+            hi: "दिवाली उत्सव की रोशनी",
+            kn: "ದೀಪಾವಳಿ ಹಬ್ಬದ ದೀಪಗಳು"
         }
-      }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?cave",
+        captions: {
+            en: "Ancient Ajanta Caves",
+            hi: "प्राचीन अजंता गुफाएं",
+            kn: "ಪ್ರಾಚೀನ ಅಜಂತಾ ಗುಹೆಗಳು"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?ruins,historical",
+        captions: {
+            en: "Historic Hampi Ruins",
+            hi: "ऐतिहासिक हम्पी खंडहर",
+            kn: "ಐತಿಹಾಸಿಕ ಹಂಪಿ ಶಿಥಿಲಾವಶೇಷಗಳು"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?backwaters,kerala",
+        captions: {
+            en: "Serene Kerala Backwaters",
+            hi: "शांत केरल बैकवाटर्स",
+            kn: "ನಿಶ್ಯಬ್ದ ಕೇರಳ ಬ್ಯಾಕ್‌ವಾಟರ್ಸ್"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?river,ghats",
+        captions: {
+            en: "Sacred Varanasi Ghats",
+            hi: "पवित्र वाराणसी घाट",
+            kn: "ಪವಿತ್ರ ವಾರಾಣಸಿ ಘಾಟ್ಗಳು"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?temple,sculpture",
+        captions: {
+            en: "Khajuraho Temples Art",
+            hi: "खजुराहो मंदिर कला",
+            kn: "ಖಜುರಾಹೋ ದೇವಾಲಯ ಕಲೆ"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?beach,goa",
+        captions: {
+            en: "Sunny Goa Beaches",
+            hi: "सनी गोवा समुद्र तट",
+            kn: "ಬಿಸಿಲಿನ ಗೋವಾ ಬೀಚ್‌ಗಳು"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?goldentemple,amritsar",
+        captions: {
+            en: "Golden Temple Amritsar",
+            hi: "स्वर्ण मंदिर अमृतसर",
+            kn: "ಗೋಲ್ಡನ್ ಟೆಂಪಲ್ ಅಮೃತಸರ"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?mumbai,skyline",
+        captions: {
+            en: "Mumbai Skyline View",
+            hi: "मुंबई स्काईलाइन दृश्य",
+            kn: "ಮುಂಬೈ ಸ್ಕೈಲೈನ್ ನೋಟ"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?mountains,ladakh",
+        captions: {
+            en: "Majestic Ladakh Mountains",
+            hi: "महान लद्दाख पहाड़",
+            kn: "ಪ್ರಭಾವಶಾಲಿ ಲಡಾಖ್ ಪರ್ವತಗಳು"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?mysore,palace",
+        captions: {
+            en: "Mysore Palace Illuminated",
+            hi: "रोशन मैसूर पैलेस",
+            kn: "ಮೈಸೂರು ಅರಮನೆ ಪ್ರಕಾಶಿತ"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?desert,fort",
+        captions: {
+            en: "Jaisalmer Fort Desert",
+            hi: "जैसलमेर किला रेगिस्तान",
+            kn: "ಜೈಸಲ್ಮೇರ್ ಕೋಟೆ ಮರುಭೂಮಿ"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?valley,greenery",
+        captions: {
+            en: "Lush Cherrapunji Valleys",
+            hi: "हरे-भरे चेरापूंजी घाटी",
+            kn: "ಹಸಿರು ಚೆರಾಪುಂಜಿ ಕಣಿವೆಗಳು"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?temple,architecture",
+        captions: {
+            en: "Konark Sun Temple",
+            hi: "कोणार्क सूर्य मंदिर",
+            kn: "ಕೊನಾರ್ಕ್ ಸನ್ ಟೆಂಪಲ್"
+        }
+    },
+    {
+        url: "https://source.unsplash.com/300x200/?beach,paradise",
+        captions: {
+            en: "Andaman Islands Beach",
+            hi: "अंडमान द्वीप समुद्र तट",
+            kn: "ಅಂಡಮಾನ್ ದ್ವೀಪಗಳ ಬೀಚ್"
+        }
+    }
+];
 
-      async function saveDetails() {
-        const realName = document.getElementById("realName").value.trim();
-        const displayName = document.getElementById("displayName").value.trim();
-        const myId = localStorage.getItem("userId");
-        const status = document.getElementById("status");
+        // DOM Elements
+        const loginForm = document.querySelector('.login-form');
+        const signupForm = document.querySelector('.signup-form');
+        const forgotPasswordForm = document.querySelector('.forgot-password-form');
+        const languageSelect = document.getElementById('language');
+        const websiteTitle = document.getElementById('website-title');
+        const slideshowContainer = document.getElementById('slideshow');
+        let currentStep = 1;
+        const totalSteps = 3;
+        let currentSlide = 0;
+        let slideshowInterval;
 
-        if (!realName || !displayName) {
-          status.textContent = "Please fill in all fields!";
-          status.classList.add("error");
-          return;
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            initSlideshow();
+            updateLanguage('en');
+            setupEventListeners();
+            updateProgressSteps();
+            startSlideshow();
+        });
+
+        function initSlideshow() {
+            imageData.forEach((image, index) => {
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                slide.style.backgroundImage = `url(${image.url})`;
+                slide.dataset.index = index;
+                
+                const caption = document.createElement('div');
+                caption.className = 'slide-caption';
+                caption.dataset.index = index;
+                slide.appendChild(caption);
+                
+                slideshowContainer.appendChild(slide);
+            });
+            
+            // Show first slide
+            document.querySelector('.slide').classList.add('active');
+            updateSlideCaptions('en');
         }
 
-        if (!auth.currentUser) {
-          status.textContent = "Authentication failed. Please log in again.";
-          status.classList.add("error");
-          return;
+        function startSlideshow() {
+            const slides = document.querySelectorAll('.slide');
+            const totalSlides = slides.length;
+            
+            slideshowInterval = setInterval(() => {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + 1) % totalSlides;
+                slides[currentSlide].classList.add('active');
+            }, 5000); // Change slide every 5 seconds
         }
 
-        console.log("Attempting to save for user:", auth.currentUser.email, "with ID:", myId);
-        const ipDetails = await getIpDetails();
-        try {
-          await db.ref(`users/${myId}`).set({
-            email: auth.currentUser.email,
-            realName: realName,
-            displayName: displayName,
-            registered: true,
-            status: "online",
-            ip: ipDetails.ip,
-            city: ipDetails.city || "Unknown",
-            country: ipDetails.country_name || "Unknown",
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-          });
-          status.textContent = "Details saved! Redirecting...";
-          setTimeout(() => window.location.href = "chat.html", 1000);
-        } catch (error) {
-          status.textContent = `Failed to save details: ${error.message}`;
-          status.classList.add("error");
-          console.error("Save details error:", error);
+        function updateSlideCaptions(lang) {
+            const captions = document.querySelectorAll('.slide-caption');
+            captions.forEach(caption => {
+                const index = caption.dataset.index;
+                caption.textContent = imageData[index].captions[lang] || imageData[index].captions.en;
+            });
         }
-      }
 
-      // Toggle between Login and Register forms
-      function showRegisterForm() {
-        document.getElementById("loginForm").style.display = "none";
-        document.getElementById("registerForm").style.display = "block";
-        document.getElementById("status").textContent = "";
-      }
+        function setupEventListeners() {
+            // Language selector
+            languageSelect.addEventListener('change', (e) => {
+                updateLanguage(e.target.value);
+            });
 
-      function showLoginForm() {
-        document.getElementById("registerForm").style.display = "none";
-        document.getElementById("loginForm").style.display = "block";
-        document.getElementById("status").textContent = "";
-      }
+            // Form toggles
+            document.getElementById('join-us-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                showForm('signup');
+            });
 
-      // Add event listeners
-      document.getElementById("loginButton").addEventListener("click", login);
-      document.getElementById("registerButton").addEventListener("click", () => {
-        console.log("Register button clicked!");
-        register();
-      });
-      document.getElementById("saveButton").addEventListener("click", saveDetails);
-      document.getElementById("showRegisterButton").addEventListener("click", showRegisterForm);
-      document.getElementById("showRegisterLink").addEventListener("click", showRegisterForm);
-      document.getElementById("showLoginButton").addEventListener("click", showLoginForm);
-      document.getElementById("showLoginLink").addEventListener("click", showLoginForm);
+            document.getElementById('login-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                showForm('login');
+            });
 
-      // Handle auth state changes
-      auth.onAuthStateChanged((user) => {
-        if (user && localStorage.getItem("userId")) {
-          handleUser(user);
+            document.getElementById('forgot-password').addEventListener('click', (e) => {
+                e.preventDefault();
+                showForm('forgot');
+            });
+
+            document.getElementById('back-to-login').addEventListener('click', (e) => {
+                e.preventDefault();
+                showForm('login');
+            });
+
+            // Password strength
+            document.getElementById('signup-password').addEventListener('input', (e) => {
+                checkPasswordStrength(e.target.value);
+            });
+
+            // Step navigation
+            document.querySelectorAll('.next-step').forEach(btn => {
+                btn.addEventListener('click', nextStep);
+            });
+
+            document.querySelectorAll('.prev-step').forEach(btn => {
+                btn.addEventListener('click', prevStep);
+            });
+
+            // Form submissions
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('signup-form').addEventListener('submit', handleSignup);
+            document.getElementById('forgot-password-form').addEventListener('submit', handleForgotPassword);
+
+            // Google login
+            document.querySelectorAll('.google-btn').forEach(btn => {
+                btn.addEventListener('click', handleGoogleLogin);
+            });
         }
-      });
 
-      console.log("Event listeners attached successfully.");
-    });
-  </script>
+        function showForm(formType) {
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'none';
+            forgotPasswordForm.style.display = 'none';
+            
+            if (formType === 'login') {
+                loginForm.style.display = 'block';
+                currentStep = 1;
+                updateProgressSteps();
+            } else if (formType === 'signup') {
+                signupForm.style.display = 'block';
+                currentStep = 1;
+                updateProgressSteps();
+            } else if (formType === 'forgot') {
+                forgotPasswordForm.style.display = 'block';
+            }
+        }
+
+        function updateLanguage(lang) {
+            // Update text content
+            const elements = document.querySelectorAll('[data-translate]');
+            elements.forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+
+            // Update placeholders
+            const placeholders = document.querySelectorAll('[data-translate-placeholder]');
+            placeholders.forEach(input => {
+                const key = input.getAttribute('data-translate-placeholder');
+                if (translations[lang][key]) {
+                    input.placeholder = translations[lang][key];
+                }
+            });
+
+            // Update website title and font
+            websiteTitle.textContent = translations[lang].website_title || "Talknix";
+            websiteTitle.className = 'website-title';
+            if (lang === 'hi') {
+                websiteTitle.classList.add('hi');
+            } else if (lang === 'kn') {
+                websiteTitle.classList.add('kn');
+            }
+
+            // Update slide captions
+            updateSlideCaptions(lang);
+        }
+
+        function checkPasswordStrength(password) {
+            const strengthBar = document.querySelector('.password-strength-bar');
+            let strength = 0;
+            
+            if (password.length >= 8) strength++;
+            if (password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^A-Za-z0-9]/)) strength++;
+            
+            const width = (strength / 4) * 100;
+            strengthBar.style.width = `${width}%`;
+            strengthBar.style.backgroundColor = 
+                strength < 2 ? '#ff4444' : 
+                strength < 4 ? '#ffc107' : '#34c759';
+        }
+
+        function updateProgressSteps() {
+            document.querySelectorAll('.progress-step').forEach((step, index) => {
+                step.classList.toggle('active', index < currentStep);
+            });
+            
+            document.querySelectorAll('.form-step').forEach(step => {
+                step.style.display = 'none';
+            });
+            
+            document.querySelector(`.form-step:nth-child(${currentStep + 1})`).style.display = 'block';
+        }
+
+        function nextStep() {
+            if (validateCurrentStep()) {
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    updateProgressSteps();
+                }
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateProgressSteps();
+            }
+        }
+
+        function validateCurrentStep() {
+            let isValid = true;
+            
+            // Validate step 1
+            if (currentStep === 1) {
+                const nameInput = document.getElementById('full-name');
+                const emailInput = document.getElementById('signup-email');
+                
+                if (!nameInput.value.trim()) {
+                    showError(nameInput, 'Please enter your full name');
+                    isValid = false;
+                }
+                
+                if (!emailInput.value || !/^\S+@\S+\.\S+$/.test(emailInput.value)) {
+                    showError(emailInput, 'Please enter a valid email');
+                    isValid = false;
+                }
+            }
+            
+            // Validate step 2
+            if (currentStep === 2) {
+                const passwordInput = document.getElementById('signup-password');
+                const confirmInput = document.getElementById('confirm-password');
+                
+                if (passwordInput.value.length < 8) {
+                    showError(passwordInput, 'Password must be at least 8 characters');
+                    isValid = false;
+                }
+                
+                if (passwordInput.value !== confirmInput.value) {
+                    showError(confirmInput, 'Passwords do not match');
+                    isValid = false;
+                }
+            }
+            
+            // Validate step 3
+            if (currentStep === 3) {
+                const phoneInput = document.getElementById('phone');
+                const termsCheckbox = document.getElementById('terms');
+                
+                if (!phoneInput.value.trim()) {
+                    showError(phoneInput, 'Please enter your phone number');
+                    isValid = false;
+                }
+                
+                if (!termsCheckbox.checked) {
+                    showError(termsCheckbox, 'You must accept the terms and conditions');
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+
+        function showError(input, message) {
+            const errorElement = input.nextElementSibling;
+            if (errorElement && errorElement.classList.contains('error-message')) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                input.classList.add('invalid');
+            }
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            document.querySelectorAll('.invalid').forEach(el => {
+                el.classList.remove('invalid');
+            });
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            clearErrors();
+            
+            const email = document.getElementById('login-email');
+            const password = document.getElementById('login-password');
+            let isValid = true;
+            
+            if (!email.value || !/^\S+@\S+\.\S+$/.test(email.value)) {
+                showError(email, 'Please enter a valid email');
+                isValid = false;
+            }
+            
+            if (!password.value) {
+                showError(password, 'Please enter your password');
+                isValid = false;
+            }
+            
+            if (isValid) {
+                // Simulate login
+                const btn = e.target.querySelector('button[type="submit"]');
+                btn.classList.add('loading');
+                btn.disabled = true;
+                
+                setTimeout(() => {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                    alert('Login successful! (This is a demo)');
+                }, 1500);
+            }
+        }
+
+        function handleSignup(e) {
+            e.preventDefault();
+            clearErrors();
+            
+            if (validateCurrentStep()) {
+                // Simulate signup
+                const btn = e.target.querySelector('button[type="submit"]');
+                btn.classList.add('loading');
+                btn.disabled = true;
+                
+                setTimeout(() => {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                    alert('Account created successfully! (This is a demo)');
+                    showForm('login');
+                }, 2000);
+            }
+        }
+
+        function handleForgotPassword(e) {
+            e.preventDefault();
+            clearErrors();
+            
+            const email = document.getElementById('reset-email');
+            let isValid = true;
+            
+            if (!email.value || !/^\S+@\S+\.\S+$/.test(email.value)) {
+                showError(email, 'Please enter a valid email');
+                isValid = false;
+            }
+            
+            if (isValid) {
+                // Simulate password reset
+                const btn = e.target.querySelector('button[type="submit"]');
+                btn.classList.add('loading');
+                btn.disabled = true;
+                
+                setTimeout(() => {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                    alert('Password reset link sent to your email! (This is a demo)');
+                    showForm('login');
+                }, 1500);
+            }
+        }
+
+        function handleGoogleLogin() {
+            alert('Google login would be implemented here in a real application');
+        }
+    </script>
 </body>
 </html>
