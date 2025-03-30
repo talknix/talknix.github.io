@@ -6,6 +6,8 @@
     <title>Talknix - Login & Signup</title>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Noto+Sans+Devanagari:wght@700&family=Noto+Sans+Kannada:wght@700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari&family=Noto+Sans+Bengali&family=Noto+Sans+Gujarati&family=Noto+Sans+Oriya&display=swap" rel="stylesheet">
+    <!-- Around line 9 - Add this with your existing font links -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&family=Noto+Sans+Malayalam:wght@400;700&family=Noto+Sans+Oriya:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Billabong&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -126,18 +128,18 @@
             background-color: #fff;
         }
 
-        .website-title {
-            font-family: 'Billabong', cursive;
-            font-size: 3rem;
-            color: #1e90ff;
-            margin-bottom: 25px;
-            letter-spacing: 1px;
-        }
+        /* Around line 109 - Replace existing .website-title classes with: */
+.website-title {
+    font-family: 'Billabong', cursive;
+    font-size: 3rem;
+    color: #1e90ff;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+}
 
-        /* Add this to your existing CSS */
-.website-title.hi,  /* Hindi */
-.website-title.mr,  /* Marathi */
-.website-title.pa { /* Punjabi */
+.website-title.hi,  /* Hindi, Marathi, Punjabi */
+.website-title.mr,
+.website-title.pa {
     font-family: 'Noto Sans Devanagari', sans-serif;
 }
 
@@ -145,12 +147,15 @@
     font-family: 'Noto Sans Kannada', sans-serif;
 }
 
-.website-title.bn,  /* Bengali */
-.website-title.as { /* Assamese */
+.website-title.bn,  /* Bengali, Assamese */
+.website-title.as {
     font-family: 'Noto Sans Bengali', sans-serif;
 }
 
-.website-title.te,  /* Telugu */
+.website-title.te { /* Telugu */
+    font-family: 'Noto Sans Telugu', sans-serif;
+}
+
 .website-title.ta { /* Tamil */
     font-family: 'Noto Sans Tamil', sans-serif;
 }
@@ -1275,12 +1280,18 @@
             // Update website title and font
             websiteTitle.textContent = translations[lang].website_title || "Talknix";
             websiteTitle.className = 'website-title';
-            if (lang === 'hi') {
-                websiteTitle.classList.add('hi');
-            } else if (lang === 'kn') {
-                websiteTitle.classList.add('kn');
-            }
-
+            const langClasses = {
+        hi: 'hi', mr: 'hi', pa: 'hi',  // Devanagari
+        kn: 'kn',                       // Kannada
+        bn: 'bn', as: 'bn',             // Bengali
+        te: 'te', ta: 'ta',             // Tamil/Telugu
+        ml: 'ml',                       // Malayalam
+        gu: 'gu',                       // Gujarati
+        or: 'or'                        // Odia
+    };
+if (langClasses[lang]) {
+        websiteTitle.classList.add(langClasses[lang]);
+    }
             // Update slide captions
             updateSlideCaptions(lang);
         }
