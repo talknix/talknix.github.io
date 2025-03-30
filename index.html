@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Talknix - Login & Signup</title>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Noto+Sans+Devanagari:wght@700&family=Noto+Sans+Kannada:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari&family=Noto+Sans+Bengali&family=Noto+Sans+Gujarati&family=Noto+Sans+Oriya&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Billabong&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -133,13 +134,38 @@
             letter-spacing: 1px;
         }
 
-        .website-title.hi {
-            font-family: 'Noto Sans Devanagari', sans-serif;
-        }
+        /* Add this to your existing CSS */
+.website-title.hi,  /* Hindi */
+.website-title.mr,  /* Marathi */
+.website-title.pa { /* Punjabi */
+    font-family: 'Noto Sans Devanagari', sans-serif;
+}
 
-        .website-title.kn {
-            font-family: 'Noto Sans Kannada', sans-serif;
-        }
+.website-title.kn { /* Kannada */
+    font-family: 'Noto Sans Kannada', sans-serif;
+}
+
+.website-title.bn,  /* Bengali */
+.website-title.as { /* Assamese */
+    font-family: 'Noto Sans Bengali', sans-serif;
+}
+
+.website-title.te,  /* Telugu */
+.website-title.ta { /* Tamil */
+    font-family: 'Noto Sans Tamil', sans-serif;
+}
+
+.website-title.ml { /* Malayalam */
+    font-family: 'Noto Sans Malayalam', sans-serif;
+}
+
+.website-title.gu { /* Gujarati */
+    font-family: 'Noto Sans Gujarati', sans-serif;
+}
+
+.website-title.or { /* Odia */
+    font-family: 'Noto Sans Oriya', sans-serif;
+}
 
         h2 {
             font-size: 1.6rem;
