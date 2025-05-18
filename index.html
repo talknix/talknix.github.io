@@ -1,124 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Offline UPI Coupon</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>TalkNix Live Chat Test</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll; margin-bottom: 10px; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-purple-100 to-blue-100 min-h-screen flex items-center justify-center p-4">
-  <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-lg w-full">
-    <h2 class="text-3xl font-bold mb-6 text-center text-indigo-700">Generate Payment Coupon</h2>
+<body>
+  <h2>TalkNix Firebase Live Chat</h2>
+  <div id="messages"></div>
+  <input type="text" id="username" placeholder="Your Name" />
+  <input type="text" id="messageInput" placeholder="Type a message..." />
+  <button onclick="sendMessage()">Send</button>
 
-    <form id="couponForm" class="space-y-4">
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Name</label>
-        <input type="text" name="name" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required />
-      </div>
+  <!-- Firebase SDK -->
+  <script type="module">
+    // ✅ Firebase config you provided
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Amount (INR)</label>
-        <input type="number" name="amount" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required />
-      </div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDsut3HjEC1un5M-pUtEHUEXivcVkn1164",
+      authDomain: "real-talknix.firebaseapp.com",
+      projectId: "real-talknix",
+      storageBucket: "real-talknix.firebasestorage.app",
+      messagingSenderId: "502501723340",
+      appId: "1:502501723340:web:623a663eec79943c570669",
+      measurementId: "G-8V11DPYC1Z"
+    };
 
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Coupon Type</label>
-        <select name="type" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="General">General</option>
-          <option value="Gift">Gift</option>
-          <option value="Business">Business</option>
-        </select>
-      </div>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const chatRef = ref(db, "talknix-messages");
 
-      <div>
-        <label class="block text-sm font-semibold text-gray-700">Add Expiry Time?</label>
-        <select name="addExpiry" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-      </div>
-
-      <div id="expiryField" class="hidden">
-        <label class="block text-sm font-semibold text-gray-700">Expiry Time</label>
-        <select name="expiryTime" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-          <option value="1 hour">1 Hour</option>
-          <option value="6 hours">6 Hours</option>
-          <option value="24 hours">24 Hours</option>
-          <option value="3 days">3 Days</option>
-        </select>
-      </div>
-
-      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-xl hover:bg-indigo-700 transition duration-300">
-        Generate QR Coupon
-      </button>
-    </form>
-
-    <div id="qrResult" class="mt-6 hidden text-center">
-      <div id="couponCard" class="p-4 rounded-2xl shadow-md border-2">
-        <p class="text-sm text-gray-600 mb-2">Your unique coupon code:</p>
-        <div id="codeDisplay" class="text-xl font-bold mb-4"></div>
-        <canvas id="qrCode" class="mx-auto mb-4"></canvas>
-        <div class="flex justify-center gap-4">
-          <button onclick="window.print()" class="bg-yellow-500 text-white py-2 px-4 rounded-xl hover:bg-yellow-600 transition duration-300">Print QR</button>
-          <button id="shareBtn" class="bg-green-600 text-white py-2 px-4 rounded-xl hover:bg-green-700 transition duration-300">Share</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
-  <script>
-    const form = document.getElementById('couponForm');
-    const qrResult = document.getElementById('qrResult');
-    const codeDisplay = document.getElementById('codeDisplay');
-    const qrCanvas = document.getElementById('qrCode');
-    const expiryField = document.getElementById('expiryField');
-    const shareBtn = document.getElementById('shareBtn');
-    const couponCard = document.getElementById('couponCard');
-
-    form.addExpiry.addEventListener('change', () => {
-      expiryField.classList.toggle('hidden', form.addExpiry.value === 'no');
+    // 🔄 Show new messages live
+    const messagesDiv = document.getElementById("messages");
+    onChildAdded(chatRef, (data) => {
+      const msg = data.val();
+      const p = document.createElement("p");
+      p.textContent = `${msg.name}: ${msg.text}`;
+      messagesDiv.appendChild(p);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      const name = form.name.value.trim();
-      const amount = form.amount.value.trim();
-      const type = form.type.value;
-      const addExpiry = form.addExpiry.value;
-      const expiryTime = form.expiryTime?.value || 'No expiry';
-
-      const couponCode = 'TKN-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-      const verification = 'VER-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-
-      const couponData = `Name: ${name}\nAmount: ₹${amount}\nType: ${type}\nCode: ${couponCode}\nVerify: ${verification}\nExpiry: ${addExpiry === 'yes' ? expiryTime : 'None'}`;
-
-      codeDisplay.textContent = couponCode;
-      QRCode.toCanvas(qrCanvas, couponData, function (error) {
-        if (error) console.error(error);
-        qrResult.classList.remove('hidden');
-      });
-
-      // Style by type
-      if (type === 'Gift') {
-        couponCard.className = 'p-4 rounded-2xl shadow-md border-2 border-pink-400 bg-pink-100';
-      } else if (type === 'Business') {
-        couponCard.className = 'p-4 rounded-2xl shadow-md border-2 border-blue-400 bg-blue-100';
-      } else {
-        couponCard.className = 'p-4 rounded-2xl shadow-md border-2 border-green-400 bg-green-100';
-      }
-    });
-
-    shareBtn.addEventListener('click', () => {
-      const text = codeDisplay.textContent;
-      const urlEncoded = encodeURIComponent(`Here's your payment coupon code: ${text}`);
-      const wa = `https://wa.me/?text=${urlEncoded}`;
-      const sms = `sms:?body=${urlEncoded}`;
-
-      const shareOptions = `\nShare via:\n1. WhatsApp: ${wa}\n2. SMS: ${sms}`;
-      alert(shareOptions);
-    });
+    // 📨 Send message
+    window.sendMessage = function() {
+      const username = document.getElementById("username").value.trim();
+      const message = document.getElementById("messageInput").value.trim();
+      if (!username || !message) return;
+      push(chatRef, { name: username, text: message });
+      document.getElementById("messageInput").value = "";
+    };
   </script>
 </body>
 </html>
