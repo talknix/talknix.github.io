@@ -17,13 +17,13 @@
 
   <!-- Firebase SDK -->
   <script type="module">
-    // ✅ Firebase config you provided
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDsut3HjEC1un5M-pUtEHUEXivcVkn1164",
       authDomain: "real-talknix.firebaseapp.com",
+      databaseURL: "https://real-talknix-default-rtdb.asia-southeast1.firebasedatabase.app", // ✅ Your correct URL
       projectId: "real-talknix",
       storageBucket: "real-talknix.firebasestorage.app",
       messagingSenderId: "502501723340",
@@ -35,8 +35,9 @@
     const db = getDatabase(app);
     const chatRef = ref(db, "talknix-messages");
 
-    // 🔄 Show new messages live
     const messagesDiv = document.getElementById("messages");
+
+    // Live listener
     onChildAdded(chatRef, (data) => {
       const msg = data.val();
       const p = document.createElement("p");
@@ -45,7 +46,7 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
-    // 📨 Send message
+    // Send message
     window.sendMessage = function() {
       const username = document.getElementById("username").value.trim();
       const message = document.getElementById("messageInput").value.trim();
