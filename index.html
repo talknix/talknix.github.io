@@ -1,59 +1,183 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>TalkNix Live Chat Test</title>
+  <meta charset="UTF-8">
+  <title>UGCET 2025 Result</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll; margin-bottom: 10px; }
-    input, button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .top-bar {
+      background-color: #007bff;
+      padding: 15px;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
+    h2 {
+      color: green;
+      margin: 20px 0;
+    }
+
+    label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    input[type="text"],
+    input[type="date"] {
+      padding: 10px;
+      width: 45%;
+      margin: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      background-color: #218838;
+      color: white;
+      padding: 10px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #1e7e34;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .table-container {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .table-block {
+      flex: 1;
+      min-width: 280px;
+      margin-top: 10px;
+    }
+
+    .info-header th {
+      background-color: #e0e0e0;
+    }
   </style>
 </head>
 <body>
-  <h2>TalkNix Firebase Live Chat</h2>
-  <div id="messages"></div>
-  <input type="text" id="username" placeholder="Your Name" />
-  <input type="text" id="messageInput" placeholder="Type a message..." />
-  <button onclick="sendMessage()">Send</button>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+  <!-- FORM PAGE -->
+  <div id="formPage" class="container">
+    <div class="top-bar">Karnataka Examinations Authority</div>
+    <h2>UGCET 2025 Examination Result for Professional Courses Admissions</h2>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDsut3HjEC1un5M-pUtEHUEXivcVkn1164",
-      authDomain: "real-talknix.firebaseapp.com",
-      databaseURL: "https://real-talknix-default-rtdb.asia-southeast1.firebasedatabase.app", // ✅ Your correct URL
-      projectId: "real-talknix",
-      storageBucket: "real-talknix.firebasestorage.app",
-      messagingSenderId: "502501723340",
-      appId: "1:502501723340:web:623a663eec79943c570669",
-      measurementId: "G-8V11DPYC1Z"
-    };
+    <label>Candidate Application Number</label>
+    <input type="text" id="appNo" value="49202318111352">
+    <label>Date of Birth</label>
+    <input type="date" id="dob" value="2007-09-13">
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const chatRef = ref(db, "talknix-messages");
+    <br><br>
+    <button onclick="showResult()">Submit</button>
+  </div>
 
-    const messagesDiv = document.getElementById("messages");
+  <!-- RESULT PAGE -->
+  <div id="resultPage" class="container" style="display: none;">
+    <div class="top-bar">Discipline Wise Rank</div>
 
-    // Live listener
-    onChildAdded(chatRef, (data) => {
-      const msg = data.val();
-      const p = document.createElement("p");
-      p.textContent = `${msg.name}: ${msg.text}`;
-      messagesDiv.appendChild(p);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
+    <table>
+      <tr class="info-header">
+        <th>Application Number</th>
+        <th colspan="2">49202318111352</th>
+        <th>Name</th>
+        <th colspan="2">ADEEP A G</th>
+      </tr>
+    </table>
 
-    // Send message
-    window.sendMessage = function() {
-      const username = document.getElementById("username").value.trim();
-      const message = document.getElementById("messageInput").value.trim();
-      if (!username || !message) return;
-      push(chatRef, { name: username, text: message });
-      document.getElementById("messageInput").value = "";
-    };
+    <div class="table-container">
+      <!-- Discipline Ranks -->
+      <div class="table-block">
+        <table>
+          <tr><th>Discipline</th><th>Rank</th></tr>
+          <tr><td>B-Pharma</td><td>206743.00</td></tr>
+          <tr><td>BPT</td><td></td></tr>
+          <tr><td>Engineering</td><td>190604.00</td></tr>
+          <tr><td>Nursing</td><td></td></tr>
+          <tr><td>Pharm-D</td><td>206872.00</td></tr>
+          <tr><td>Agri(BSc)(Theory)</td><td></td></tr>
+          <tr><td>BPO</td><td>257531.00</td></tr>
+          <tr><td>Agriculture(Pract.)</td><td></td></tr>
+          <tr><td>Veter Sci(Pract.)</td><td></td></tr>
+          <tr><td>Veter Sci(Theory)</td><td></td></tr>
+          <tr><td>B.Sc. AHS</td><td></td></tr>
+          <tr><td>Naturopathy & Yoga</td><td></td></tr>
+          <tr><td>Medical Record Technology</td><td>226037.00</td></tr>
+        </table>
+      </div>
+
+      <!-- Correct Answers -->
+      <div class="table-block">
+        <table>
+          <tr><th>Subject</th><th>Correct/Total</th><th>Details</th></tr>
+          <tr><td>CHEMISTRY</td><td>27/60</td><td><a href="#">Show</a></td></tr>
+          <tr><td>MATHS</td><td>34/60</td><td><a href="#">Show</a></td></tr>
+          <tr><td>PHYSICS</td><td>29/60</td><td><a href="#">Show</a></td></tr>
+        </table>
+      </div>
+
+      <!-- Marks -->
+      <div class="table-block">
+        <table>
+          <tr><th>Subject</th><th>Obtained</th><th>Max</th></tr>
+          <tr><td>CHEMISTRY</td><td>50</td><td>100</td></tr>
+          <tr><td>COMPUTER SCIENCE</td><td>59</td><td>100</td></tr>
+          <tr><td>ENGLISH</td><td>71</td><td>100</td></tr>
+          <tr><td>MATHEMATICS</td><td>53</td><td>100</td></tr>
+          <tr><td>PHYSICS</td><td>60</td><td>100</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showResult() {
+      document.getElementById('formPage').style.display = 'none';
+      document.getElementById('resultPage').style.display = 'block';
+    }
   </script>
+
 </body>
 </html>
